@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CX Analytics</title>
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* Glass UI */
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+        }
+
+        /* Nav Items */
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-item:hover {
+            background: rgba(59,130,246,0.2);
+            transform: translateX(6px) scale(1.02);
+        }
+
+        .active {
+            background: linear-gradient(to right, #3b82f6, #9333ea);
+            box-shadow: 0 0 20px rgba(59,130,246,0.6);
+        }
+
+        /* Page animation */
+        .page {
+            animation: fadeIn 0.6s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 🔥 UNIQUE LOADER */
+        #loader {
+            position: fixed;
+            inset: 0;
+            background: #020617;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .orb {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #3b82f6, #9333ea);
+            animation: pulse 1.5s infinite ease-in-out;
+            box-shadow: 0 0 60px #3b82f6;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.4); opacity: 0.3; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+    </style>
+</head>
+
+<body class="bg-gradient-to-br from-black via-gray-900 to-blue-900 text-white">
+
+<!-- 🔥 LOADER -->
+<div id="loader">
+    <div class="orb"></div>
+</div>
+
+<div class="flex">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar glass p-6 flex flex-col justify-between h-screen sticky top-0">
+
+        <div>
+            <h1 class="text-2xl font-bold text-blue-400 mb-8 flex items-center gap-2">
+                🚀 CX Analytics
+            </h1>
+
+            <nav class="space-y-3 text-lg">
+
+                <a href="/dashboard" class="nav-item {% if request.path == '/dashboard' %}active{% endif %}">
+                    <i data-lucide="layout-dashboard"></i>
+                    Dashboard
+                </a>
+
+                <a href="/analytics" class="nav-item {% if request.path == '/analytics' %}active{% endif %}">
+                    <i data-lucide="bar-chart-3"></i>
+                    Analytics
+                </a>
+
+                <a href="/customers" class="nav-item {% if request.path == '/customers' %}active{% endif %}">
+                    <i data-lucide="users"></i>
+                    Customers
+                </a>
+
+                <a href="/reports" class="nav-item {% if request.path == '/reports' %}active{% endif %}">
+                    <i data-lucide="file-text"></i>
+                    Reports
+                </a>
+
+                {% if current_user.is_authenticated and current_user.role == 'admin' %}
+                <a href="/admin" class="nav-item {% if request.path == '/admin' %}active{% endif %}">
+                    <i data-lucide="shield"></i>
+                    Admin Panel
+                </a>
+                {% endif %}
+
+                <a href="/settings" class="nav-item {% if request.path == '/settings' %}active{% endif %}">
+                    <i data-lucide="settings"></i>
+                    Settings
+                </a>
+
+                <a href="/about" class="nav-item {% if request.path == '/about' %}active{% endif %}">
+                    <i data-lucide="info"></i>
+                    About
+                </a>
+
+            </nav>
+        </div>
+
+        <!-- Logout -->
+        <a href="/logout" class="text-red-400 hover:text-red-300 flex items-center gap-2">
+            <i data-lucide="log-out"></i>
+            Logout
+        </a>
+
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="flex-1 p-10 overflow-y-auto h-screen page">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+</div>
+
+<!-- Scripts -->
+<script>
+    // Load icons
+    lucide.createIcons();
+
+    // Loader animation
+    window.addEventListener("load", () => {
+        const loader = document.getElementById("loader");
+        loader.style.opacity = "0";
+        loader.style.transition = "0.6s";
+        setTimeout(() => loader.style.display = "none", 600);
+    });
+
+    // Smooth page transition
+    document.querySelectorAll("a").forEach(link => {
+        if (link.hostname === window.location.hostname) {
+            link.addEventListener("click", function (e) {
+                e.preventDefault();
+                const href = this.href;
+
+                document.body.style.opacity = "0";
+                document.body.style.transition = "0.3s";
+
+                setTimeout(() => {
+                    window.location = href;
+                }, 300);
+            });
+        }
+    });
+</script>
+
+</body>
+</html>
