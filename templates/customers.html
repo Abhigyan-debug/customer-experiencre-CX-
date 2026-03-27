@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2 class="text-4xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+    Customers 👥
+</h2>
+
+<!-- 🔍 SEARCH -->
+<form method="GET" class="flex gap-3 mb-6">
+    <input type="text" name="search" value="{{ request.args.get('search','') }}"
+           class="p-3 w-64 bg-gray-800 rounded-lg focus:outline-none">
+
+    <button class="bg-blue-500 px-4 py-2 rounded hover:bg-blue-600 transition">
+        Search
+    </button>
+</form>
+
+<!-- 📋 TABLE -->
+<div class="glass p-6 rounded-xl shadow-lg">
+
+    <table class="w-full text-left">
+
+        <tr class="border-b border-gray-600 text-blue-400">
+            <th class="p-2">Name</th>
+            <th class="p-2">Phone</th>
+            <th class="p-2">Service</th>
+            <th class="p-2">Feedback</th>
+            <th class="p-2">Sentiment</th>
+            <th class="p-2">Emotion</th>
+            <th class="p-2">Actions</th>
+        </tr>
+
+        {% if feedbacks.items %}
+            {% for f in feedbacks.items %}
+            <tr class="border-b border-gray-700 hover:bg-white/5 transition">
+
+                <td class="p-2">{{ f.name }}</td>
+                <td class="p-2">{{ f.phone }}</td>
+                <td class="p-2">{{ f.service }}</td>
+                <td class="p-2">{{ f.text }}</td>
+
+                <!-- SENTIMENT -->
+                <td class="p-2">
+                    <span class="
+                        {% if f.sentiment=='Positive' %}text-green-400
+                        {% elif f.sentiment=='Negative' %}text-red-400
+                        {% else %}text-yellow-400{% endif %}
+                    ">
+                        {{ f.sentiment }}
+                    </span>
+                </td>
+
+                <!-- EMOTION -->
+                <td class="p-2">
+                    <span class="
+                        {% if f.emotion=='Happy' %}text-green-400
+                        {% elif f.emotion=='Sad' %}text-blue-400
+                        {% elif f.emotion=='Angry' %}text-red-400
+                        {% else %}text-yellow-400{% endif %}
+                    ">
+                        {{ f.emotion }}
+                    </span>
+                </td>
+
+                <!-- ACTIONS -->
+                <td class="p-2 flex gap-2">
+
+                    <a href="/edit/{{ f.id }}"
+                       class="px-2 py-1 bg-blue-500 rounded text-xs hover:bg-blue-600">
+                        Edit
+                    </a>
+
+                    <a href="/delete/{{ f.id }}"
+                       class="px-2 py-1 bg-red-500 rounded text-xs hover:bg-red-600"
+                       onclick="return confirm('Delete this record?')">
+                        Delete
+                    </a>
+
+                </td>
+
+            </tr>
+            {% endfor %}
+
+        {% else %}
+            <tr>
+                <td colspan="7" class="text-center p-4 text-gray-400">
+                    No Customers Found
+                </td>
+            </tr>
+        {% endif %}
+
+    </table>
+
+</div>
+
+<!-- 🔢 PAGINATION -->
+<div class="mt-6 flex justify-center gap-3">
+
+    {% if feedbacks.has_prev %}
+    <a href="?page={{ feedbacks.prev_num }}"
+       class="px-4 py-2 bg-gray-700 rounded hover:bg-gray-600">
+        ⬅ Prev
+    </a>
+    {% endif %}
+
+    {% if feedbacks.has_next %}
+    <a href="?page={{ feedbacks.next_num }}"
+       class="px-4 py-2 bg-gray-700 rounded hover:bg-gray-600">
+        Next ➡
+    </a>
+    {% endif %}
+
+</div>
+
+{% endblock %}
