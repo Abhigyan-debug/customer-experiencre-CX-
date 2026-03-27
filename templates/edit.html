@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2 class="text-3xl mb-6 text-blue-400">Edit Feedback ✏️</h2>
+
+<form method="POST" class="glass p-6 w-96">
+
+    <input name="name" value="{{ f.name }}" class="w-full p-2 mb-3 bg-gray-800 rounded">
+
+    <input name="phone" value="{{ f.phone }}" class="w-full p-2 mb-3 bg-gray-800 rounded">
+
+    <input name="service" value="{{ f.service }}" class="w-full p-2 mb-3 bg-gray-800 rounded">
+
+    <textarea name="feedback" class="w-full p-2 mb-3 bg-gray-800 rounded">
+{{ f.text }}
+    </textarea>
+
+    <button class="bg-blue-500 px-4 py-2 rounded w-full">
+        Update
+    </button>
+
+</form>
+
+{% endblock %}
