@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2 class="text-4xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+    Dashboard Overview 🚀
+</h2>
+
+<!-- ALERT -->
+{% if alert %}
+<div class="bg-gradient-to-r from-red-600 to-red-400 p-4 rounded-xl mb-6 text-center animate-pulse">
+    {{ alert }}
+</div>
+{% endif %}
+
+<!-- STATS -->
+<div class="grid grid-cols-4 gap-4 mb-6">
+
+    <div class="glass card p-6 text-center">
+        <h4>📊 Total</h4>
+        <p class="text-3xl font-bold text-blue-400">{{ total }}</p>
+    </div>
+
+    <div class="glass card p-6 text-center">
+        <h4>😊 Positive</h4>
+        <p class="text-3xl font-bold text-green-400">{{ positive }}</p>
+    </div>
+
+    <div class="glass card p-6 text-center">
+        <h4>😡 Negative</h4>
+        <p class="text-3xl font-bold text-red-400">{{ negative }}</p>
+    </div>
+
+    <div class="glass card p-6 text-center">
+        <h4>📈 Positive %</h4>
+        <p class="text-3xl font-bold text-yellow-400">{{ positive_percent }}%</p>
+    </div>
+
+</div>
+
+<!-- 🔥 AI HEALTH SCORE -->
+<div class="glass card p-4 mb-6 text-center border border-yellow-400 shadow-lg">
+
+    {% if positive_percent >= 70 %}
+        <h2 class="text-green-400 text-2xl font-bold animate-pulse">
+            🟢 Excellent: {{ positive_percent }}%
+        </h2>
+
+    {% elif positive_percent >= 40 %}
+        <h2 class="text-yellow-400 text-2xl font-bold animate-pulse">
+            🟡 Average: {{ positive_percent }}%
+        </h2>
+
+    {% else %}
+        <h2 class="text-red-400 text-2xl font-bold animate-pulse">
+            🔴 Poor: {{ positive_percent }}%
+        </h2>
+    {% endif %}
+
+    <p class="text-sm text-gray-400 mt-1">
+        Based on customer sentiment analysis
+    </p>
+
+</div>
+<div class="grid grid-cols-3 gap-6">
+
+    <!-- LEFT FORM -->
+    <div class="glass card p-6">
+
+        <!-- CSV -->
+        <form method="POST" enctype="multipart/form-data" class="mb-4">
+            <input type="file" name="file" class="mb-2 w-full text-sm">
+            <button class="bg-green-500 hover:bg-green-600 p-2 w-full rounded">
+                Upload CSV
+            </button>
+        </form>
+
+        <!-- FORM -->
+        <form method="POST">
+
+            <input name="name" placeholder="Name"
+                   class="w-full p-3 mb-3 bg-black/40 border border-gray-700 rounded-lg">
+
+            <input name="phone" placeholder="Phone"
+                   class="w-full p-3 mb-3 bg-black/40 border border-gray-700 rounded-lg">
+
+            <input name="service" placeholder="Service"
+                   class="w-full p-3 mb-3 bg-black/40 border border-gray-700 rounded-lg">
+
+            <textarea id="feedbackBox" name="feedback" placeholder="Feedback"
+                      class="w-full p-3 mb-3 bg-black/40 border border-gray-700 rounded-lg"></textarea>
+
+            <!-- LIVE SENTIMENT -->
+            <p id="liveSentiment" class="text-yellow-400 mb-3"></p>
+
+            <button class="bg-gradient-to-r from-blue-500 to-purple-600 p-3 w-full rounded-lg hover:scale-105 transition">
+                Analyze
+            </button>
+        </form>
+
+    </div>
+
+    <!-- CHART -->
+    <div class="glass card p-6 col-span-2">
+        <h3 class="mb-4 text-blue-400">📈 Sentiment Trend</h3>
+        <canvas id="myChart"></canvas>
+    </div>
+
+</div>
+
+<!-- PIE -->
+<div class="glass card p-6 mt-6 flex justify-center">
+    <div class="w-72 h-72">
+        <canvas id="pieChart"></canvas>
+    </div>
+</div>
+
+<!-- 🔥 AI INSIGHTS -->
+<div class="glass card p-6 mt-6">
+    <h3 class="text-blue-400 text-xl mb-4">🧠 AI Insights</h3>
+
+    <div class="text-gray-300 space-y-3">
+        {% for line in insight.split('\n') %}
+
+            {% if "Summary:" in line %}
+                <h3 class="text-green-400 text-lg font-semibold">📊 {{ line }}</h3>
+
+            {% elif "Problems:" in line %}
+                <h3 class="text-red-400 text-lg font-semibold">⚠️ {{ line }}</h3>
+
+            {% elif "Suggestions:" in line %}
+                <h3 class="text-blue-400 text-lg font-semibold">💡 {{ line }}</h3>
+
+            {% elif line.startswith('-') %}
+                <p class="ml-4">• {{ line[1:] }}</p>
+
+            {% else %}
+                <p>{{ line }}</p>
+
+            {% endif %}
+
+        {% endfor %}
+    </div>
+</div>
+
+<!-- TABLE -->
+<div class="glass card p-6 mt-6">
+    <table class="w-full text-left">
+        <tr class="border-b border-gray-600">
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Service</th>
+            <th>Feedback</th>
+            <th>Sentiment</th>
+            <th>Emotion</th>
+        </tr>
+
+        {% for f in feedbacks %}
+        <tr class="border-b border-gray-700 hover:bg-white/5">
+            <td>{{ f.name }}</td>
+            <td>{{ f.phone }}</td>
+            <td>{{ f.service }}</td>
+            <td>{{ f.text }}</td>
+            <td>{{ f.sentiment }}</td>
+            <td>{{ f.emotion }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<!-- CHARTS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const labels = {{ labels|tojson|safe }};
+const dataValues = {{ data_values|tojson|safe }};
+
+// LINE CHART
+new Chart(document.getElementById('myChart'), {
+    type: 'line',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: "Sentiment",
+            data: dataValues,
+            borderColor: 'cyan',
+            tension: 0.4
+        }]
+    }
+});
+
+// PIE CHART
+new Chart(document.getElementById('pieChart'), {
+    type: 'pie',
+    data: {
+        labels: ['Positive','Negative'],
+        datasets: [{
+            data: [{{ positive }}, {{ negative }}]
+        }]
+    }
+});
+
+// LIVE SENTIMENT
+const textarea = document.getElementById("feedbackBox");
+
+if(textarea){
+    textarea.addEventListener("input", async () => {
+        const text = textarea.value;
+
+        if(text.length < 3){
+            document.getElementById("liveSentiment").innerText = "";
+            return;
+        }
+
+        const res = await fetch("/live_sentiment", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ text: text })
+        });
+
+        const data = await res.json();
+
+        document.getElementById("liveSentiment").innerText =
+            "🤖 AI Sentiment: " + data.sentiment;
+    });
+}
+</script>
+
+{% endblock %}
