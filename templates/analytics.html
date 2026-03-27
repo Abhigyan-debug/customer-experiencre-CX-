@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2 class="text-3xl mb-6 text-blue-400">Analytics 📈</h2>
+
+<div class="grid grid-cols-2 gap-6">
+
+    <div class="glass p-6">
+        <h3 class="mb-4">Sentiment Distribution</h3>
+        <canvas id="pieChart"></canvas>
+    </div>
+
+    <div class="glass p-6">
+        <h3 class="mb-4">Bar Chart</h3>
+        <canvas id="barChart"></canvas>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+new Chart(document.getElementById('pieChart'), {
+    type: 'pie',
+    data: {
+        labels: ['Positive', 'Negative'],
+        datasets: [{
+            data: [{{ positive }}, {{ negative }}],
+            backgroundColor: ['green','red']
+        }]
+    }
+});
+
+new Chart(document.getElementById('barChart'), {
+    type: 'bar',
+    data: {
+        labels: ['Positive','Negative'],
+        datasets: [{
+            data: [{{ positive }}, {{ negative }}],
+            backgroundColor: ['green','red']
+        }]
+    }
+});
+</script>
+
+{% endblock %}
