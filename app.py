@@ -363,6 +363,7 @@ def reports():
 
     return render_template('reports.html', insight=insight)
 
+<<<<<<< HEAD
 # 📄 ABOUT PAGE
 @app.route('/about')
 def about():
@@ -375,6 +376,8 @@ def about():
 def settings():
     return render_template('settings.html')
 
+=======
+>>>>>>> dcb92b39ae8d28574e94583151ba5c99239e0d18
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 from flask import send_file
