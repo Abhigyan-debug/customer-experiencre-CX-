@@ -2,12 +2,10 @@
 <html>
 <head>
     <title>CX Analytics</title>
-<<<<<<< HEAD
+
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-=======
 
->>>>>>> dcb92b39ae8d28574e94583151ba5c99239e0d18
     <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -21,7 +19,7 @@
         body {
             font-family: 'Poppins', sans-serif;
         }
-<<<<<<< HEAD
+
         button, a {
           transition: all 0.3s ease;
         }
@@ -38,27 +36,14 @@
          border-radius: 20px;
          border: 1px solid rgba(255,255,255,0.15);
          box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-=======
-
-        /* Glass UI */
-        .glass {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(15px);
-            border-radius: 16px;
-            border: 1px solid rgba(255,255,255,0.1);
->>>>>>> dcb92b39ae8d28574e94583151ba5c99239e0d18
         }
 
         /* Sidebar */
         .sidebar {
-<<<<<<< HEAD
-         width: 260px;
+         width: 250px;
          background: rgba(10,10,20,0.6);
          backdrop-filter: blur(20px);
          border-right: 1px solid rgba(255,255,255,0.1);
-=======
-            width: 250px;
->>>>>>> dcb92b39ae8d28574e94583151ba5c99239e0d18
         }
 
         /* Nav Items */
@@ -72,7 +57,6 @@
         }
 
         .nav-item:hover {
-<<<<<<< HEAD
           background: linear-gradient(135deg, rgba(59,130,246,0.3), rgba(147,51,234,0.3));
           transform: translateX(8px) scale(1.03);
           box-shadow: 0 8px 25px rgba(0,0,0,0.5);
@@ -82,15 +66,6 @@
          background: linear-gradient(135deg, #3b82f6, #9333ea);
          box-shadow: 0 0 25px rgba(59,130,246,0.8);
          transform: scale(1.02);
-=======
-            background: rgba(59,130,246,0.2);
-            transform: translateX(6px) scale(1.02);
-        }
-
-        .active {
-            background: linear-gradient(to right, #3b82f6, #9333ea);
-            box-shadow: 0 0 20px rgba(59,130,246,0.6);
->>>>>>> dcb92b39ae8d28574e94583151ba5c99239e0d18
         }
 
         /* Page animation */
@@ -137,8 +112,7 @@
     </style>
 </head>
 
-<<<<<<< HEAD
-<body class="text-white relative overflow-hidden">
+<body class="bg-gradient-to-br from-black via-gray-900 to-blue-900 text-white relative overflow-hidden">
 
 <!-- Animated BG -->
 <div class="fixed inset-0 -z-10 bg-gradient-to-br from-black via-indigo-900 to-black"></div>
@@ -146,9 +120,6 @@
 <!-- Glow Effects -->
 <div class="fixed top-0 left-0 w-96 h-96 bg-blue-500 opacity-20 blur-3xl rounded-full animate-pulse"></div>
 <div class="fixed bottom-0 right-0 w-96 h-96 bg-purple-600 opacity-20 blur-3xl rounded-full animate-pulse"></div>
-=======
-<body class="bg-gradient-to-br from-black via-gray-900 to-blue-900 text-white">
->>>>>>> dcb92b39ae8d28574e94583151ba5c99239e0d18
 
 <!-- 🔥 LOADER -->
 <div id="loader">
@@ -217,17 +188,10 @@
 
     <!-- MAIN CONTENT -->
     <div class="flex-1 p-10 overflow-y-auto h-screen page">
-<<<<<<< HEAD
-    <div class="glass p-8 shadow-2xl">
-        {% block content %}
-        {% endblock %}
-    </div>
-=======
         {% block content %}
         {% endblock %}
     </div>
 
->>>>>>> dcb92b39ae8d28574e94583151ba5c99239e0d18
 </div>
 
 <!-- Scripts -->

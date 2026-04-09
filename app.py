@@ -327,11 +327,40 @@ def analytics():
     else:
         feedbacks = Feedback.query.filter_by(user_id=current_user.id).all()
 
+    total = len(feedbacks)
+
     positive = sum(1 for f in feedbacks if f.sentiment == "Positive")
     negative = sum(1 for f in feedbacks if f.sentiment == "Negative")
     neutral = sum(1 for f in feedbacks if f.sentiment == "Neutral")
 
-    return render_template('analytics.html', positive=positive, negative=negative, neutral=neutral)
+    # 💡 Emotion Analytics
+    emotions = {}
+    for f in feedbacks:
+        emotions[f.emotion] = emotions.get(f.emotion, 0) + 1
+
+    # 💡 Service-wise Analytics
+    services = {}
+    for f in feedbacks:
+        if f.service:
+            services[f.service] = services.get(f.service, 0) + 1
+
+    # 💡 Trend (last 10 feedback sentiment)
+    trend = [1 if f.sentiment == "Positive" else 0 if f.sentiment == "Negative" else 0.5 for f in feedbacks[-10:]]
+
+    # 💡 Score (like CX Score)
+    score = round((positive / total) * 100, 2) if total > 0 else 0
+
+    return render_template(
+        'analytics.html',
+        positive=positive,
+        negative=negative,
+        neutral=neutral,
+        total=total,
+        emotions=emotions,
+        services=services,
+        trend=trend,
+        score=score
+    )
 
 
 # 👥 CUSTOMERS
@@ -363,7 +392,7 @@ def reports():
 
     return render_template('reports.html', insight=insight)
 
-<<<<<<< HEAD
+
 # 📄 ABOUT PAGE
 @app.route('/about')
 def about():
@@ -371,13 +400,29 @@ def about():
 
 
 # ⚙️ SETTINGS PAGE
-@app.route('/settings')
+@app.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():
+
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        user = current_user
+
+        if username:
+            user.username = username
+
+        if password and len(password) >= 4:
+            user.password = generate_password_hash(password)
+
+        db.session.commit()
+
+        flash("✅ Settings updated successfully", "success")
+        return redirect('/settings')
+
     return render_template('settings.html')
 
-=======
->>>>>>> dcb92b39ae8d28574e94583151ba5c99239e0d18
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 from flask import send_file

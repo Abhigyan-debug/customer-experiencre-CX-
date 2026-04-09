@@ -174,7 +174,6 @@
 const labels = {{ labels|tojson|safe }};
 const dataValues = {{ data_values|tojson|safe }};
 
-<<<<<<< HEAD
 const positive = {{ positive }};
 const negative = {{ negative }};
 const neutral = {{ total - positive - negative }};
@@ -188,15 +187,47 @@ gradient.addColorStop(0, 'rgba(59,130,246,0.6)');
 gradient.addColorStop(1, 'rgba(147,51,234,0.1)');
 
 new Chart(ctx, {
-=======
-// LINE CHART
-new Chart(document.getElementById('myChart'), {
->>>>>>> dcb92b39ae8d28574e94583151ba5c99239e0d18
     type: 'line',
     data: {
         labels: labels,
         datasets: [{
-<<<<<<< HEAD
+            label: "Sentiment Trend",
+            data: dataValues,
+            fill: true,
+            backgroundColor: gradient,
+            borderColor: '#3b82f6',
+            tension: 0.4,
+            pointBackgroundColor: '#fff',
+            pointRadius: 5,
+            pointHoverRadius: 8
+        }]
+    },
+    options: {
+        animation: {
+            duration: 2000
+        },
+        plugins: {
+            legend: {
+                labels: { color: 'white' }
+            }
+        },
+        scales: {
+            x: {
+                ticks: { color: 'white' }
+            },
+            y: {
+                ticks: { color: 'white' }
+            }
+        }
+    }
+});
+
+// LINE CHART
+new Chart(document.getElementById('myChart'), {
+    type: 'line',
+    data: {
+        labels: labels,
+        datasets: [{
             label: "Sentiment Trend",
             data: dataValues,
             fill: true,
@@ -258,7 +289,6 @@ new Chart(document.getElementById('pieChart'), {
 });
 
 // ⚡ LIVE SENTIMENT (same but smoother)
-=======
             label: "Sentiment",
             data: dataValues,
             borderColor: 'cyan',
@@ -279,7 +309,7 @@ new Chart(document.getElementById('pieChart'), {
 });
 
 // LIVE SENTIMENT
->>>>>>> dcb92b39ae8d28574e94583151ba5c99239e0d18
+
 const textarea = document.getElementById("feedbackBox");
 
 if(textarea){
@@ -293,13 +323,12 @@ if(textarea){
 
         const res = await fetch("/live_sentiment", {
             method: "POST",
-<<<<<<< HEAD
+
             headers: { "Content-Type": "application/json" },
-=======
             headers: {
                 "Content-Type": "application/json"
             },
->>>>>>> dcb92b39ae8d28574e94583151ba5c99239e0d18
+
             body: JSON.stringify({ text: text })
         });
 

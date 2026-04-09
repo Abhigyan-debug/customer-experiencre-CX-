@@ -3,16 +3,54 @@
 
 <h2 class="text-3xl mb-6 text-blue-400">Analytics 📈</h2>
 
+<!-- 🔥 TOP STATS -->
+<div class="grid grid-cols-4 gap-4 mb-6">
+    <div class="glass p-4 text-center">
+        <h3>Total</h3>
+        <h1 class="text-2xl">{{ total }}</h1>
+    </div>
+
+    <div class="glass p-4 text-center">
+        <h3>Positive</h3>
+        <h1 class="text-green-400 text-2xl">{{ positive }}</h1>
+    </div>
+
+    <div class="glass p-4 text-center">
+        <h3>Negative</h3>
+        <h1 class="text-red-400 text-2xl">{{ negative }}</h1>
+    </div>
+
+    <div class="glass p-4 text-center">
+        <h3>CX Score</h3>
+        <h1 class="text-blue-400 text-2xl">{{ score }}%</h1>
+    </div>
+</div>
+
+<!-- 📊 CHART GRID -->
 <div class="grid grid-cols-2 gap-6">
 
+    <!-- PIE -->
     <div class="glass p-6">
         <h3 class="mb-4">Sentiment Distribution</h3>
         <canvas id="pieChart"></canvas>
     </div>
 
+    <!-- BAR -->
     <div class="glass p-6">
-        <h3 class="mb-4">Bar Chart</h3>
+        <h3 class="mb-4">Sentiment Comparison</h3>
         <canvas id="barChart"></canvas>
+    </div>
+
+    <!-- EMOTION -->
+    <div class="glass p-6">
+        <h3 class="mb-4">Emotion Analysis</h3>
+        <canvas id="emotionChart"></canvas>
+    </div>
+
+    <!-- TREND -->
+    <div class="glass p-6">
+        <h3 class="mb-4">Feedback Trend</h3>
+        <canvas id="trendChart"></canvas>
     </div>
 
 </div>
@@ -20,27 +58,59 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
+
+// 🎯 PIE CHART
 new Chart(document.getElementById('pieChart'), {
     type: 'pie',
     data: {
-        labels: ['Positive', 'Negative'],
+        labels: ['Positive', 'Negative', 'Neutral'],
         datasets: [{
-            data: [{{ positive }}, {{ negative }}],
-            backgroundColor: ['green','red']
+            data: [{{ positive }}, {{ negative }}, {{ neutral }}],
+            backgroundColor: ['#22c55e','#ef4444','#eab308']
         }]
     }
 });
 
+// 🎯 BAR CHART
 new Chart(document.getElementById('barChart'), {
     type: 'bar',
     data: {
-        labels: ['Positive','Negative'],
+        labels: ['Positive','Negative','Neutral'],
         datasets: [{
-            data: [{{ positive }}, {{ negative }}],
-            backgroundColor: ['green','red']
+            label: "Count",
+            data: [{{ positive }}, {{ negative }}, {{ neutral }}],
+            backgroundColor: ['#22c55e','#ef4444','#eab308']
         }]
     }
 });
+
+// 🎯 EMOTION CHART
+new Chart(document.getElementById('emotionChart'), {
+    type: 'doughnut',
+    data: {
+        labels: {{ emotions.keys() | list | tojson }},
+        datasets: [{
+            data: {{ emotions.values() | list | tojson }},
+            backgroundColor: ['#60a5fa','#f472b6','#34d399','#fbbf24']
+        }]
+    }
+});
+
+// 🎯 TREND LINE
+new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: {
+        labels: [...Array({{ trend|length }}).keys()],
+        datasets: [{
+            label: "Trend",
+            data: {{ trend }},
+            borderColor: '#3b82f6',
+            fill: false,
+            tension: 0.4
+        }]
+    }
+});
+
 </script>
 
 {% endblock %}
