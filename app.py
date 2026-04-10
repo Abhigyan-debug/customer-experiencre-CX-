@@ -1,10 +1,13 @@
 from flask import Flask, render_template, redirect, request, abort, flash, url_for, jsonify
+from sympy import content
 from models import db, User, Feedback
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from textblob import TextBlob
 from datetime import timedelta
 import csv
+from flask import Response
+import io
 import secrets
 import os
 from dotenv import load_dotenv
@@ -149,6 +152,17 @@ def home():
 
 
 # 🔐 REGISTER
+import re
+
+def is_strong_password(password):
+    return (
+        len(password) >= 8 and
+        re.search(r"[A-Z]", password) and
+        re.search(r"[a-z]", password) and
+        re.search(r"[0-9]", password) and
+        re.search(r"[!@#$%^&*]", password)
+    )
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -159,8 +173,9 @@ def register():
             flash("⚠️ All fields required", "error")
             return redirect('/register')
 
-        if len(password) < 4:
-            flash("⚠️ Password too short", "error")
+        # 🔐 strong password check
+        if not is_strong_password(password):
+            flash("❌ Password must be 8+ chars, include A-Z, a-z, 0-9 & special char", "error")
             return redirect('/register')
 
         existing = User.query.filter_by(username=username).first()
@@ -168,7 +183,12 @@ def register():
             flash("❌ User already exists", "error")
             return redirect('/register')
 
-        hashed_password = generate_password_hash(password)
+        # 🔐 secure hashing
+        hashed_password = generate_password_hash(
+            password,
+            method='pbkdf2:sha256',
+            salt_length=16
+        )
 
         role = 'admin' if User.query.count() == 0 else 'user'
 
@@ -182,8 +202,9 @@ def register():
 
     return render_template('register.html')
 
-
 # 🔐 LOGIN
+login_attempts = {}
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
@@ -194,9 +215,15 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+        ip = request.remote_addr
 
         if not username or not password:
             flash("⚠️ Fill all fields", "error")
+            return redirect('/login')
+
+        # 🔐 brute force protection
+        if ip in login_attempts and login_attempts[ip] >= 5:
+            flash("⚠️ Too many attempts. Try later.", "error")
             return redirect('/login')
 
         user = User.query.filter_by(username=username).first()
@@ -204,13 +231,16 @@ def login():
         if not user:
             flash("❌ User not found", "error")
             error = True
+            login_attempts[ip] = login_attempts.get(ip, 0) + 1
 
         elif not check_password_hash(user.password, password):
             flash("❌ Wrong password", "error")
             error = True
+            login_attempts[ip] = login_attempts.get(ip, 0) + 1
 
         else:
             login_user(user, remember=True)
+            login_attempts[ip] = 0  # reset on success
             flash("✅ Login successful", "success")
             return redirect('/dashboard')
 
@@ -221,7 +251,8 @@ def login():
 @app.route('/dashboard', methods=['GET', 'POST'])
 @login_required
 def dashboard():
-
+   
+    view = request.args.get('view', 'my')
     if request.method == 'POST' and 'file' in request.files:
         file = request.files['file']
 
@@ -268,7 +299,10 @@ def dashboard():
             db.session.add(fb)
             db.session.commit()
 
-    feedbacks = Feedback.query.filter_by(user_id=current_user.id).all()
+    if view == 'all' and current_user.role == 'admin':
+       feedbacks = Feedback.query.all()
+    else:
+       feedbacks = Feedback.query.filter_by(user_id=current_user.id).all()
 
     total = len(feedbacks)
     positive = sum(1 for f in feedbacks if f.sentiment == "Positive")
@@ -281,8 +315,16 @@ def dashboard():
 
     alert = "⚠️ High negative feedback!" if negative > positive else None
 
+    # 🧠 Emotion Analysis
+    from collections import Counter
+    emotion_count = Counter(f.emotion for f in feedbacks)
+    top_emotion = emotion_count.most_common(1)[0][0] if emotion_count else "None"
+
     # 🔥 NEW AI INSIGHT
-    insight = generate_insight(feedbacks)
+    if current_user.ai_enabled:
+         insight = generate_insight(feedbacks)
+    else:
+         insight = "⚠️ AI Insights Disabled by user"
 
     return render_template(
         'dashboard.html',
@@ -294,7 +336,9 @@ def dashboard():
         labels=labels,
         data_values=data_values,
         alert=alert,
-        insight=insight
+        insight=insight,
+        view=view,
+        top_emotion=top_emotion
     )
 
 
@@ -316,6 +360,114 @@ def admin():
     users = User.query.all()
     return render_template('admin.html', users=users)
 
+from flask import send_file
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
+import matplotlib.pyplot as plt
+
+@app.route('/download_report')
+@login_required
+def download_report():
+
+    from flask import session
+
+    feedbacks = Feedback.query.filter_by(user_id=current_user.id).all()
+
+    total = len(feedbacks)
+    positive = sum(1 for f in feedbacks if f.sentiment == "Positive")
+    negative = sum(1 for f in feedbacks if f.sentiment == "Negative")
+    neutral = total - (positive + negative)
+
+    ai_summary = session.get("ai_summary", "No summary available")
+    ai_problems = session.get("ai_problems", [])
+    ai_suggestions = session.get("ai_suggestions", [])
+
+    labels = ['Positive', 'Negative', 'Neutral']
+    values = [positive, negative, neutral]
+
+    chart_path = "chart.png"
+
+    plt.figure()
+    plt.pie(values, labels=labels, autopct='%1.1f%%')
+    plt.title("Sentiment Distribution")
+    plt.savefig(chart_path)
+    plt.close()
+
+    pdf_path = "report.pdf"
+    doc = SimpleDocTemplate(pdf_path)
+
+    styles = getSampleStyleSheet()
+    content = []
+
+    content.append(Paragraph("CX ANALYTICS REPORT", styles['Title']))
+    content.append(Spacer(1, 20))
+
+    content.append(Paragraph(f"Total Feedback: {total}", styles['Normal']))
+    content.append(Paragraph(f"Positive: {positive}", styles['Normal']))
+    content.append(Paragraph(f"Negative: {negative}", styles['Normal']))
+    content.append(Paragraph(f"Neutral: {neutral}", styles['Normal']))
+
+    content.append(Spacer(1, 20))
+
+    table_data = [
+        ["Type", "Count"],
+        ["Positive", positive],
+        ["Negative", negative],
+        ["Neutral", neutral]
+    ]
+
+    table = Table(table_data, colWidths=[200, 100])
+
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.grey),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('GRID', (0,0), (-1,-1), 1, colors.black),
+        ('BACKGROUND', (0,1), (-1,-1), colors.beige),
+    ]))
+
+    content.append(table)
+    content.append(Spacer(1, 20))
+
+    content.append(Paragraph("Sentiment Distribution", styles['Heading2']))
+    content.append(Spacer(1, 10))
+    content.append(Image(chart_path, width=350, height=250))
+
+    content.append(Spacer(1, 25))
+
+    if positive > negative:
+        insight = "Customers are mostly satisfied 😊"
+    elif negative > positive:
+        insight = "Negative feedback is higher ⚠️ Improve service"
+    else:
+        insight = "Feedback is balanced ⚖️"
+
+    content.append(Paragraph(f"AI Insight: {insight}", styles['Normal']))
+
+    content.append(Spacer(1, 20))
+
+    content.append(Paragraph("AI REPORT", styles['Heading2']))
+    content.append(Spacer(1, 10))
+
+    content.append(Paragraph("Summary:", styles['Heading3']))
+    content.append(Paragraph(ai_summary, styles['Normal']))
+
+    content.append(Spacer(1, 10))
+
+    content.append(Paragraph("Problems:", styles['Heading3']))
+    for p in ai_problems:
+        content.append(Paragraph(f"- {p}", styles['Normal']))
+
+    content.append(Spacer(1, 10))
+
+    content.append(Paragraph("Suggestions:", styles['Heading3']))
+    for s in ai_suggestions:
+        content.append(Paragraph(f"- {s}", styles['Normal']))
+
+    doc.build(content)
+
+    return send_file(pdf_path, as_attachment=True)
 
 # 📈 ANALYTICS
 @app.route('/analytics')
@@ -333,22 +485,33 @@ def analytics():
     negative = sum(1 for f in feedbacks if f.sentiment == "Negative")
     neutral = sum(1 for f in feedbacks if f.sentiment == "Neutral")
 
-    # 💡 Emotion Analytics
     emotions = {}
     for f in feedbacks:
         emotions[f.emotion] = emotions.get(f.emotion, 0) + 1
 
-    # 💡 Service-wise Analytics
     services = {}
     for f in feedbacks:
         if f.service:
             services[f.service] = services.get(f.service, 0) + 1
 
-    # 💡 Trend (last 10 feedback sentiment)
-    trend = [1 if f.sentiment == "Positive" else 0 if f.sentiment == "Negative" else 0.5 for f in feedbacks[-10:]]
+    trend = [
+        1 if f.sentiment == "Positive"
+        else 0 if f.sentiment == "Negative"
+        else 0.5
+        for f in feedbacks[-10:]
+    ]
 
-    # 💡 Score (like CX Score)
     score = round((positive / total) * 100, 2) if total > 0 else 0
+
+    data_values = [
+        1 if f.sentiment == "Positive"
+        else 0 if f.sentiment == "Negative"
+        else 0.5
+        for f in feedbacks
+    ]
+
+    if not data_values:
+        data_values = [0]
 
     return render_template(
         'analytics.html',
@@ -359,7 +522,8 @@ def analytics():
         emotions=emotions,
         services=services,
         trend=trend,
-        score=score
+        score=score,
+        data_values=data_values
     )
 
 
@@ -407,14 +571,29 @@ def settings():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+        old_password = request.form.get('old_password')
 
         user = current_user
 
+        # 🔐 verify current password
+        if not check_password_hash(user.password, old_password):
+            flash("❌ Wrong current password", "error")
+            return redirect('/settings')
+
+        # username update
         if username:
             user.username = username
 
-        if password and len(password) >= 4:
+        # password update
+        if password:
+            if not is_strong_password(password):
+                flash("❌ Weak password", "error")
+                return redirect('/settings')
+
             user.password = generate_password_hash(password)
+
+        user.email_notify = True if request.form.get('email_notify') == 'on' else False
+        user.ai_enabled = True if request.form.get('ai_toggle') == 'on' else False
 
         db.session.commit()
 
@@ -422,38 +601,55 @@ def settings():
         return redirect('/settings')
 
     return render_template('settings.html')
-
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet
-from flask import send_file
-import io
-
-@app.route('/download_report')
+# 🗑 ACCOUNT DELETION
+@app.route('/delete_account', methods=['POST'])
 @login_required
-def download_report():
+def delete_account():
+    user = current_user
+
+    # delete all user data
+    Feedback.query.filter_by(user_id=user.id).delete()
+
+    # delete user
+    db.session.delete(user)
+    db.session.commit()
+
+    logout_user()
+
+    flash("🗑 Account deleted successfully", "success")
+    return redirect('/login')
+
+@app.route('/export_csv')
+@login_required
+def export_csv():
     feedbacks = Feedback.query.filter_by(user_id=current_user.id).all()
-    insight = generate_insight(feedbacks)
 
-    # ✅ Create PDF in memory (NO FILE SAVE)
-    buffer = io.BytesIO()
+    output = io.StringIO()
+    writer = csv.writer(output)
 
-    doc = SimpleDocTemplate(buffer)
-    styles = getSampleStyleSheet()
+    writer.writerow(['Name', 'Phone', 'Service', 'Feedback', 'Sentiment'])
 
-    content = []
+    for f in feedbacks:
+        writer.writerow([f.name, f.phone, f.service, f.text, f.sentiment])
 
-    content.append(Paragraph("📊 AI Customer Feedback Report", styles['Title']))
-    content.append(Spacer(1, 20))
+    output.seek(0)
 
-    for line in insight.split("\n"):
-        content.append(Paragraph(line, styles['Normal']))
-        content.append(Spacer(1, 10))
+    return Response(
+        output,
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment;filename=feedback_data.csv"}
+    )
 
-    doc.build(content)
+# 🧹 CLEAR ALL FEEDBACK DATA
+@app.route('/clear_data', methods=['POST'])
+@login_required
+def clear_data():
+    Feedback.query.filter_by(user_id=current_user.id).delete()
+    db.session.commit()
 
-    buffer.seek(0)
+    flash("🧹 All feedback data cleared", "success")
+    return redirect('/settings')
 
-    return send_file(buffer, as_attachment=True, download_name="AI_Report.pdf", mimetype='application/pdf')
 
 # 🚪 LOGOUT
 @app.route('/logout')

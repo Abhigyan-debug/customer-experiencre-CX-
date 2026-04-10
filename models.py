@@ -8,6 +8,8 @@ class User(db.Model, UserMixin):
     username = db.Column(db.String(100))
     password = db.Column(db.String(100))
     role = db.Column(db.String(20), default='user')
+    email_notify = db.Column(db.Boolean, default=True)
+    ai_enabled = db.Column(db.Boolean, default=True)
 
 
 class Feedback(db.Model):
@@ -20,6 +22,4 @@ class Feedback(db.Model):
 
     sentiment = db.Column(db.String(20))
     emotion = db.Column(db.String(20))
-
-    # 🔥 ADD THIS LINE
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))

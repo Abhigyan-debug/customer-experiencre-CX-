@@ -1,56 +1,71 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2 class="text-3xl mb-6 text-blue-400">Analytics 📈</h2>
+<h2 class="text-4xl font-bold mb-8 text-cyan-400">Analytics</h2>
 
-<!-- 🔥 TOP STATS -->
-<div class="grid grid-cols-4 gap-4 mb-6">
-    <div class="glass p-4 text-center">
-        <h3>Total</h3>
-        <h1 class="text-2xl">{{ total }}</h1>
+<div class="grid grid-cols-4 gap-6 mb-8">
+
+    <div class="p-5 rounded-xl bg-white/5 border border-white/10 hover:scale-105 hover:shadow-cyan-500/30 transition shadow-lg text-center">
+        <p class="text-gray-400">Total</p>
+        <h2 class="text-3xl font-bold text-white">{{ total }}</h2>
     </div>
 
-    <div class="glass p-4 text-center">
-        <h3>Positive</h3>
-        <h1 class="text-green-400 text-2xl">{{ positive }}</h1>
+    <div class="p-5 rounded-xl bg-green-500/10 border border-green-400/20 hover:scale-105 hover:shadow-cyan-500/30 transition shadow-lg text-center">
+        <p class="text-gray-400">Positive</p>
+        <h2 class="text-3xl font-bold text-green-400">{{ positive }}</h2>
     </div>
 
-    <div class="glass p-4 text-center">
-        <h3>Negative</h3>
-        <h1 class="text-red-400 text-2xl">{{ negative }}</h1>
+    <div class="p-5 rounded-xl bg-red-500/10 border border-red-400/20 hover:scale-105 hover:shadow-cyan-500/30 transition shadow-lg text-center">
+        <p class="text-gray-400">Negative</p>
+        <h2 class="text-3xl font-bold text-red-400">{{ negative }}</h2>
     </div>
 
-    <div class="glass p-4 text-center">
-        <h3>CX Score</h3>
-        <h1 class="text-blue-400 text-2xl">{{ score }}%</h1>
+    <div class="p-5 rounded-xl bg-cyan-500/10 border border-cyan-400/20 hover:scale-105 hover:shadow-cyan-500/30 transition shadow-lg text-center">
+        <p class="text-gray-400">CX Score</p>
+        <h2 class="text-3xl font-bold text-cyan-400">{{ score }}%</h2>
     </div>
+
 </div>
 
-<!-- 📊 CHART GRID -->
 <div class="grid grid-cols-2 gap-6">
 
-    <!-- PIE -->
-    <div class="glass p-6">
-        <h3 class="mb-4">Sentiment Distribution</h3>
-        <canvas id="pieChart"></canvas>
+    <div class="p-6 rounded-2xl bg-white/5 border border-white/10 shadow-xl hover:shadow-cyan-500/30 hover:scale-[1.02] transition duration-300">
+        <h3 class="text-lg font-semibold text-white mb-4">Sentiment Overview</h3>
+        <div class="flex justify-center items-center h-[240px]">
+            <canvas id="donutChart" class="w-44 h-44"></canvas>
+        </div>
     </div>
 
-    <!-- BAR -->
-    <div class="glass p-6">
-        <h3 class="mb-4">Sentiment Comparison</h3>
-        <canvas id="barChart"></canvas>
+    <div class="p-6 rounded-2xl bg-white/5 border border-white/10 shadow-xl hover:shadow-cyan-500/30 hover:scale-[1.02] transition duration-300">
+        <h3 class="text-lg font-semibold text-white mb-4">Comparison</h3>
+        <div class="flex justify-center items-center h-[240px]">
+            <canvas id="barChart" class="w-48 h-48"></canvas>
+        </div>
     </div>
 
-    <!-- EMOTION -->
-    <div class="glass p-6">
-        <h3 class="mb-4">Emotion Analysis</h3>
-        <canvas id="emotionChart"></canvas>
+    <div class="p-6 rounded-2xl bg-white/5 border border-white/10 shadow-xl hover:shadow-cyan-500/30 hover:scale-[1.02] transition duration-300">
+        <h3 class="text-lg font-semibold text-white mb-4">Emotion Insights</h3>
+        <div class="flex justify-center items-center h-[240px]">
+            <canvas id="emotionChart" class="w-44 h-44"></canvas>
+        </div>
     </div>
 
-    <!-- TREND -->
-    <div class="glass p-6">
-        <h3 class="mb-4">Feedback Trend</h3>
-        <canvas id="trendChart"></canvas>
+    <div class="p-6 rounded-2xl bg-white/5 border border-white/10 shadow-xl hover:shadow-cyan-500/30 hover:scale-[1.02] transition duration-300">
+        
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-white">Sentiment Trend</h3>
+
+            <select id="filter" class="bg-black/40 border border-gray-700 px-3 py-1 rounded text-sm text-white">
+                <option value="10">Last 10</option>
+                <option value="5">Last 5</option>
+                <option value="all">All</option>
+            </select>
+        </div>
+
+        <div class="h-[240px]">
+            <canvas id="trendChart"></canvas>
+        </div>
+
     </div>
 
 </div>
@@ -59,56 +74,112 @@
 
 <script>
 
-// 🎯 PIE CHART
-new Chart(document.getElementById('pieChart'), {
-    type: 'pie',
+const positive = {{ positive|default(0) }};
+const negative = {{ negative|default(0) }};
+const neutral = {{ neutral|default(0) }};
+const trendData = {{ trend|tojson }};
+const emotions = {{ emotions|tojson }};
+
+new Chart(document.getElementById("donutChart"), {
+    type: "doughnut",
     data: {
-        labels: ['Positive', 'Negative', 'Neutral'],
+        labels: ["Positive","Negative","Neutral"],
         datasets: [{
-            data: [{{ positive }}, {{ negative }}, {{ neutral }}],
-            backgroundColor: ['#22c55e','#ef4444','#eab308']
+            data: [positive, negative, neutral],
+            backgroundColor: ["#22c55e","#ef4444","#eab308"],
+            hoverOffset: 15
         }]
+    },
+    options: {
+        cutout: "70%",
+        plugins: { legend: { position: "bottom", labels:{color:"white"} }},
+        animation: { duration: 1200 }
     }
 });
 
-// 🎯 BAR CHART
-new Chart(document.getElementById('barChart'), {
-    type: 'bar',
+const ctx = document.getElementById("barChart").getContext("2d");
+
+const g1 = ctx.createLinearGradient(0,0,0,200);
+g1.addColorStop(0,"#22c55e");
+g1.addColorStop(1,"#16a34a");
+
+const g2 = ctx.createLinearGradient(0,0,0,200);
+g2.addColorStop(0,"#ef4444");
+g2.addColorStop(1,"#b91c1c");
+
+new Chart(ctx, {
+    type: "bar",
     data: {
-        labels: ['Positive','Negative','Neutral'],
+        labels: ["Positive","Negative","Neutral"],
         datasets: [{
-            label: "Count",
-            data: [{{ positive }}, {{ negative }}, {{ neutral }}],
-            backgroundColor: ['#22c55e','#ef4444','#eab308']
+            data: [positive, negative, neutral],
+            backgroundColor: [g1,g2,"#eab308"],
+            borderRadius: 14,
+            barThickness: 30
         }]
+    },
+    options: {
+        plugins: { legend: { display: false }},
+        scales: {
+            x: { ticks:{color:"white"} },
+            y: { ticks:{color:"white"}, beginAtZero:true }
+        },
+        animation: { duration: 1200 }
     }
 });
 
-// 🎯 EMOTION CHART
-new Chart(document.getElementById('emotionChart'), {
-    type: 'doughnut',
+new Chart(document.getElementById("emotionChart"), {
+    type: "doughnut",
     data: {
-        labels: {{ emotions.keys() | list | tojson }},
+        labels: Object.keys(emotions),
         datasets: [{
-            data: {{ emotions.values() | list | tojson }},
-            backgroundColor: ['#60a5fa','#f472b6','#34d399','#fbbf24']
+            data: Object.values(emotions),
+            backgroundColor: ["#38bdf8","#f472b6","#34d399","#facc15","#fb7185"],
+            hoverOffset: 12
         }]
+    },
+    options: {
+        cutout: "70%",
+        plugins: { legend: { position: "bottom", labels:{color:"white"} }},
+        animation: { duration: 1200 }
     }
 });
 
-// 🎯 TREND LINE
-new Chart(document.getElementById('trendChart'), {
-    type: 'line',
-    data: {
-        labels: [...Array({{ trend|length }}).keys()],
-        datasets: [{
-            label: "Trend",
-            data: {{ trend }},
-            borderColor: '#3b82f6',
-            fill: false,
-            tension: 0.4
-        }]
-    }
+let chart;
+
+function draw(data){
+    if(chart) chart.destroy();
+
+    chart = new Chart(document.getElementById("trendChart"), {
+        type: "line",
+        data: {
+            labels: data.map((_,i)=>i+1),
+            datasets: [{
+                data: data,
+                borderColor: "#22d3ee",
+                backgroundColor: "rgba(34,211,238,0.15)",
+                fill: true,
+                tension: 0.4,
+                pointRadius: 3
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false }},
+            scales: {
+                x: { display:false },
+                y: { display:false, min:0, max:1 }
+            },
+            animation: { duration: 1200 }
+        }
+    });
+}
+
+draw(trendData.slice(-10));
+
+document.getElementById("filter").addEventListener("change", e=>{
+    if(e.target.value=="5") draw(trendData.slice(-5));
+    else if(e.target.value=="10") draw(trendData.slice(-10));
+    else draw(trendData);
 });
 
 </script>

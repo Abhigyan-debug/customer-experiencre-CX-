@@ -1,13 +1,19 @@
 <!DOCTYPE html>
-<html>
+<html class="transition-colors duration-300">
 <head>
     <title>CX Analytics</title>
 
-    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- 🔥 DARK MODE ENABLE -->
+    <script>
+    tailwind.config = {
+      darkMode: 'class'
+    }
+    </script>
 
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -29,7 +35,6 @@
           box-shadow: 0 0 20px rgba(59,130,246,0.6);
         }
 
-        /* Glass UI */
         .glass {
          background: rgba(255, 255, 255, 0.07);
          backdrop-filter: blur(20px);
@@ -38,7 +43,6 @@
          box-shadow: 0 10px 40px rgba(0,0,0,0.6);
         }
 
-        /* Sidebar */
         .sidebar {
          width: 250px;
          background: rgba(10,10,20,0.6);
@@ -46,7 +50,6 @@
          border-right: 1px solid rgba(255,255,255,0.1);
         }
 
-        /* Nav Items */
         .nav-item {
             display: flex;
             align-items: center;
@@ -59,32 +62,21 @@
         .nav-item:hover {
           background: linear-gradient(135deg, rgba(59,130,246,0.3), rgba(147,51,234,0.3));
           transform: translateX(8px) scale(1.03);
-          box-shadow: 0 8px 25px rgba(0,0,0,0.5);
         }
 
         .active {
          background: linear-gradient(135deg, #3b82f6, #9333ea);
-         box-shadow: 0 0 25px rgba(59,130,246,0.8);
-         transform: scale(1.02);
         }
 
-        /* Page animation */
         .page {
             animation: fadeIn 0.6s ease-in-out;
         }
 
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        /* 🔥 UNIQUE LOADER */
         #loader {
             position: fixed;
             inset: 0;
@@ -101,7 +93,6 @@
             border-radius: 50%;
             background: radial-gradient(circle, #3b82f6, #9333ea);
             animation: pulse 1.5s infinite ease-in-out;
-            box-shadow: 0 0 60px #3b82f6;
         }
 
         @keyframes pulse {
@@ -112,16 +103,12 @@
     </style>
 </head>
 
-<body class="bg-gradient-to-br from-black via-gray-900 to-blue-900 text-white relative overflow-hidden">
+<body class="bg-gradient-to-br from-black via-gray-900 to-blue-900 text-white dark:bg-gray-900 transition-colors duration-300">
 
-<!-- Animated BG -->
-<div class="fixed inset-0 -z-10 bg-gradient-to-br from-black via-indigo-900 to-black"></div>
+<!-- BG -->
+<div class="fixed inset-0 -z-10 bg-gradient-to-br from-black via-indigo-900 to-black dark:from-gray-900 dark:via-black"></div>
 
-<!-- Glow Effects -->
-<div class="fixed top-0 left-0 w-96 h-96 bg-blue-500 opacity-20 blur-3xl rounded-full animate-pulse"></div>
-<div class="fixed bottom-0 right-0 w-96 h-96 bg-purple-600 opacity-20 blur-3xl rounded-full animate-pulse"></div>
-
-<!-- 🔥 LOADER -->
+<!-- Loader -->
 <div id="loader">
     <div class="orb"></div>
 </div>
@@ -129,7 +116,7 @@
 <div class="flex">
 
     <!-- SIDEBAR -->
-    <div class="sidebar glass p-6 flex flex-col justify-between h-screen sticky top-0">
+    <div class="sidebar glass p-6 flex flex-col justify-between h-screen sticky top-0 dark:bg-gray-900">
 
         <div>
             <h1 class="text-2xl font-bold text-blue-400 mb-8 flex items-center gap-2">
@@ -178,15 +165,14 @@
             </nav>
         </div>
 
-        <!-- Logout -->
-        <a href="/logout" class="text-red-400 hover:text-red-300 flex items-center gap-2">
+        <a href="/logout" class="text-red-400 flex items-center gap-2">
             <i data-lucide="log-out"></i>
             Logout
         </a>
 
     </div>
 
-    <!-- MAIN CONTENT -->
+    <!-- MAIN -->
     <div class="flex-1 p-10 overflow-y-auto h-screen page">
         {% block content %}
         {% endblock %}
@@ -194,35 +180,31 @@
 
 </div>
 
-<!-- Scripts -->
+<!-- JS -->
 <script>
-    // Load icons
-    lucide.createIcons();
+lucide.createIcons();
 
-    // Loader animation
-    window.addEventListener("load", () => {
-        const loader = document.getElementById("loader");
-        loader.style.opacity = "0";
-        loader.style.transition = "0.6s";
-        setTimeout(() => loader.style.display = "none", 600);
-    });
+// 🌙 DARK MODE GLOBAL (IMPORTANT)
+function toggleDark(){
+    document.documentElement.classList.toggle("dark")
 
-    // Smooth page transition
-    document.querySelectorAll("a").forEach(link => {
-        if (link.hostname === window.location.hostname) {
-            link.addEventListener("click", function (e) {
-                e.preventDefault();
-                const href = this.href;
+    localStorage.setItem(
+        "darkMode",
+        document.documentElement.classList.contains("dark")
+    )
+}
 
-                document.body.style.opacity = "0";
-                document.body.style.transition = "0.3s";
+// load saved theme
+if(localStorage.getItem("darkMode") === "true"){
+    document.documentElement.classList.add("dark")
+}
 
-                setTimeout(() => {
-                    window.location = href;
-                }, 300);
-            });
-        }
-    });
+// loader
+window.addEventListener("load", () => {
+    const loader = document.getElementById("loader");
+    loader.style.opacity = "0";
+    setTimeout(() => loader.style.display = "none", 600);
+});
 </script>
 
 </body>

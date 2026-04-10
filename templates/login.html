@@ -12,29 +12,39 @@
             font-family: 'Poppins', sans-serif;
         }
 
+        /* 🌌 Better background */
         .bg-glow {
-            background: radial-gradient(circle at top, #1e3a8a, #020617);
+            background: radial-gradient(circle at top, #0f172a, #020617);
         }
 
+        /* 🧊 Glass Card Enhanced */
         .card {
             background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(15px);
+            backdrop-filter: blur(20px);
             border-radius: 20px;
             border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 0 40px rgba(59,130,246,0.2);
             animation: fadeIn 0.6s ease;
         }
 
+        /* ✨ Input styling */
         .input {
-            background: rgba(0,0,0,0.4);
+            background: rgba(0,0,0,0.5);
             border: 1px solid rgba(255,255,255,0.1);
+            transition: 0.3s;
         }
 
         .input:focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 10px #3b82f6;
+            border-color: #6366f1;
+            box-shadow: 0 0 12px #6366f1;
         }
 
-        /* 🔥 shake animation */
+        /* 🔥 Button hover glow */
+        .btn-glow:hover {
+            box-shadow: 0 0 15px #6366f1;
+        }
+
+        /* shake animation */
         .shake {
             animation: shake 0.4s;
         }
@@ -56,51 +66,83 @@
 
 <body class="bg-glow min-h-screen flex items-center justify-center text-white">
 
-<div class="card p-10 w-96 shadow-2xl {% if error %}shake{% endif %}">
+<div class="card p-10 w-96 {% if error %}shake{% endif %}">
 
-    <h2 class="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+    <!-- 🔥 Heading -->
+    <h2 class="text-3xl font-bold mb-2 text-center bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent">
         Welcome Back 🚀
     </h2>
 
-    <!-- 🎉 SUCCESS (after register) -->
+    <p class="text-center text-gray-400 mb-6 text-sm">
+        Login to access your analytics dashboard
+    </p>
+
+    <!-- FLASH MESSAGES -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% for category, message in messages %}
-            {% if category == 'success' %}
-            <div class="bg-green-500/20 text-green-400 p-3 mb-4 text-center rounded-lg">
+            <div class="
+                p-3 mb-4 text-center rounded-lg
+                {% if category == 'error' %}bg-red-500/20 text-red-400{% endif %}
+                {% if category == 'success' %}bg-green-500/20 text-green-400{% endif %}
+            ">
                 {{ message }}
             </div>
-            {% endif %}
         {% endfor %}
     {% endwith %}
 
-    <!-- ❌ ERROR -->
-    {% if error %}
-    <div class="bg-red-500/20 text-red-400 p-3 mb-4 text-center rounded-lg animate-pulse">
-        Invalid username or password
-    </div>
-    {% endif %}
+    <!-- FORM -->
+    <form method="POST" autocomplete="off">
 
-    <form method="POST">
+        <!-- Username -->
+        <div class="mb-4">
+            <label class="text-sm text-gray-400">Username</label>
+            <input type="text" name="username" required
+                   value="{{ request.form.username }}"
+                   placeholder="Enter username"
+                   class="input w-full p-3 mt-1 rounded-lg focus:outline-none">
+        </div>
 
-        <input type="text" name="username" placeholder="Username"
-               value="{{ request.form.username }}"
-               class="input w-full p-3 mb-4 rounded-lg focus:outline-none">
+        <!-- Password -->
+        <div class="mb-4 relative">
+            <label class="text-sm text-gray-400">Password</label>
+            <input type="password" name="password" id="password" required
+                   placeholder="Enter password"
+                   class="input w-full p-3 mt-1 rounded-lg focus:outline-none pr-10">
 
-        <input type="password" name="password" placeholder="Password"
-               class="input w-full p-3 mb-6 rounded-lg focus:outline-none">
+            <!-- 👁 Toggle -->
+            <span onclick="togglePassword()"
+                  class="absolute right-3 top-10 cursor-pointer text-gray-400 hover:text-white">
+                👁
+            </span>
+        </div>
 
-        <button class="w-full p-3 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:scale-105 transition">
+        <!-- Info -->
+        <p class="text-xs text-gray-500 mb-4 text-center">
+            🔐 Secure login enabled
+        </p>
+
+        <!-- Button -->
+        <button class="w-full p-3 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 hover:scale-105 transition btn-glow">
             Login
         </button>
 
     </form>
 
-    <p class="text-center mt-4 text-sm text-gray-400">
+    <!-- Footer -->
+    <p class="text-center mt-5 text-sm text-gray-400">
         Don't have an account?
-        <a href="/register" class="text-blue-400 hover:underline">Register</a>
+        <a href="/register" class="text-indigo-400 hover:underline">Register</a>
     </p>
 
 </div>
+
+<!-- JS -->
+<script>
+function togglePassword() {
+    const pwd = document.getElementById("password");
+    pwd.type = pwd.type === "password" ? "text" : "password";
+}
+</script>
 
 </body>
 </html>
