@@ -1,6 +1,7 @@
 from flask import Flask, render_template, redirect, request, abort, flash, url_for, jsonify
 from sympy import content
 from models import db, User, Feedback
+from flask_wtf import CSRFProtect
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from textblob import TextBlob
@@ -11,11 +12,39 @@ import io
 import secrets
 import os
 from dotenv import load_dotenv
+import matplotlib
+matplotlib.use('Agg')
 from groq import Groq
 load_dotenv()
 
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
+from sklearn.metrics import accuracy_score, precision_score, recall_score
+
+def evaluate_model(feedbacks):
+    y_true = []
+    y_pred = []
+
+    for f in feedbacks:
+        if f.text:
+            # simple demo ground truth
+            if "good" in f.text.lower():
+                y_true.append("Positive")
+            elif "bad" in f.text.lower():
+                y_true.append("Negative")
+            else:
+                y_true.append("Neutral")
+
+            y_pred.append(f.sentiment)
+
+    if not y_true:
+        return 0, 0, 0
+
+    accuracy = accuracy_score(y_true, y_pred)
+    precision = precision_score(y_true, y_pred, average='macro', zero_division=0)
+    recall = recall_score(y_true, y_pred, average='macro', zero_division=0)
+
+    return round(accuracy*100,2), round(precision*100,2), round(recall*100,2)
 # 🤖 OPTIONAL AI MODEL (safe fallback)
 try:
     from transformers import pipeline
@@ -26,14 +55,17 @@ except:
 
 app = Flask(__name__)
 
-# 🔐 CONFIG
+#  CSRF PROTECTION
+csrf = CSRFProtect(app)
+
+#  CONFIG
 app.config['SECRET_KEY'] = 'secret123'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=7)
 
 db.init_app(app)
 
-# 🔐 LOGIN MANAGER
+#  LOGIN MANAGER
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
@@ -190,7 +222,12 @@ def register():
             salt_length=16
         )
 
-        role = 'admin' if User.query.count() == 0 else 'user'
+        admin_code = request.form.get('admin_code')
+
+        if admin_code == "SECRET123":
+            role = 'admin'
+        else:
+            role = 'user'
 
         user = User(username=username, password=hashed_password, role=role)
 
@@ -221,7 +258,7 @@ def login():
             flash("⚠️ Fill all fields", "error")
             return redirect('/login')
 
-        # 🔐 brute force protection
+        #  brute force protection
         if ip in login_attempts and login_attempts[ip] >= 5:
             flash("⚠️ Too many attempts. Try later.", "error")
             return redirect('/login')
@@ -240,12 +277,35 @@ def login():
 
         else:
             login_user(user, remember=True)
-            login_attempts[ip] = 0  # reset on success
+            login_attempts[ip] = 0  
             flash("✅ Login successful", "success")
             return redirect('/dashboard')
 
     return render_template('login.html', error=error)
 
+@app.route('/delete/<int:id>')
+def delete(id):
+    feedback = Feedback.query.get_or_404(id)
+
+    db.session.delete(feedback)
+    db.session.commit()
+
+    return redirect('/customers')  
+ 
+@app.route('/edit/<int:id>', methods=['GET', 'POST'])
+def edit(id):
+    feedback = Feedback.query.get_or_404(id)
+
+    if request.method == 'POST':
+        feedback.name = request.form.get('name')
+        feedback.phone = request.form.get('phone')
+        feedback.service = request.form.get('service')
+        feedback.text = request.form.get('text')
+
+        db.session.commit()
+        return redirect('/customers')
+
+    return render_template('edit.html', feedback=feedback)
 
 # 📊 DASHBOARD
 @app.route('/dashboard', methods=['GET', 'POST'])
@@ -253,6 +313,7 @@ def login():
 def dashboard():
    
     view = request.args.get('view', 'my')
+
     if request.method == 'POST' and 'file' in request.files:
         file = request.files['file']
 
@@ -279,6 +340,9 @@ def dashboard():
 
             db.session.commit()
 
+            from flask import flash
+            flash("✅ CSV uploaded and analyzed successfully", "success")
+
     elif request.method == 'POST':
         text = request.form.get('feedback')
 
@@ -299,10 +363,17 @@ def dashboard():
             db.session.add(fb)
             db.session.commit()
 
+            from flask import flash
+            flash("✅ Feedback analyzed & saved successfully", "success")
+
+            print("NEW FEEDBACK:", text)
+            print("SENTIMENT:", sentiment)
+            print("EMOTION:", emotion)
+
     if view == 'all' and current_user.role == 'admin':
-       feedbacks = Feedback.query.all()
+        feedbacks = Feedback.query.all()
     else:
-       feedbacks = Feedback.query.filter_by(user_id=current_user.id).all()
+        feedbacks = Feedback.query.filter_by(user_id=current_user.id).all()
 
     total = len(feedbacks)
     positive = sum(1 for f in feedbacks if f.sentiment == "Positive")
@@ -315,16 +386,71 @@ def dashboard():
 
     alert = "⚠️ High negative feedback!" if negative > positive else None
 
-    # 🧠 Emotion Analysis
+    #  Emotion Analysis
     from collections import Counter
     emotion_count = Counter(f.emotion for f in feedbacks)
     top_emotion = emotion_count.most_common(1)[0][0] if emotion_count else "None"
 
-    # 🔥 NEW AI INSIGHT
+    #  AI INSIGHT
     if current_user.ai_enabled:
-         insight = generate_insight(feedbacks)
+        raw = generate_insight(feedbacks)
+        print("AI RAW OUTPUT:", raw)
+
+        summary = ""
+        problems = []
+        suggestions = []
+
+        section = None
+
+        for line in raw.split("\n"):
+            line = line.strip()
+
+            if "Summary" in line:
+                section = "summary"
+                continue
+            elif "Problems" in line:
+                section = "problems"
+                continue
+            elif "Suggestions" in line:
+                section = "suggestions"
+                continue
+
+            if section == "summary":
+                if line:
+                    summary += line.replace("-", "").strip() + " "
+
+            elif section == "problems":
+                if line.startswith("-"):
+                    problems.append(line.replace("-", "").strip())
+
+            elif section == "suggestions":
+                if line.startswith("-"):
+                    suggestions.append(line.replace("-", "").strip())
+
+        # fallback
+        if not summary.strip():
+            summary = "Customer feedback shows mixed experiences."
+
+        if not problems:
+            problems = ["General issues detected"]
+
+        if not suggestions:
+            suggestions = ["Improve service quality"]
+
+        from flask import session
+        session["ai_summary"] = summary
+        session["ai_problems"] = problems
+        session["ai_suggestions"] = suggestions
+
+        insight = {
+            "summary": summary,
+            "problems": problems,
+            "suggestions": suggestions
+        }
+        accuracy, precision, recall = evaluate_model(feedbacks)
     else:
-         insight = "⚠️ AI Insights Disabled by user"
+        insight = {"summary": "AI Disabled", "problems": [], "suggestions": []}
+        accuracy, precision, recall = 0, 0, 0
 
     return render_template(
         'dashboard.html',
@@ -338,19 +464,41 @@ def dashboard():
         alert=alert,
         insight=insight,
         view=view,
-        top_emotion=top_emotion
+        top_emotion=top_emotion,
+         accuracy=accuracy,
+         precision=precision,
+         recall=recall
     )
 
 
-# ⚡ LIVE SENTIMENT
+#  LIVE SENTIMENT
 @app.route('/live_sentiment', methods=['POST'])
+@csrf.exempt 
 @login_required
 def live_sentiment():
-    text = request.json.get('text')
-    return jsonify({"sentiment": get_sentiment(text)})
+    data = request.get_json(silent=True)
+    text = data.get('text') if data else None
 
+    if not text:
+        return jsonify({"error": "No text provided"}), 400
 
-# 👑 ADMIN
+    result = get_sentiment(text)
+
+    if isinstance(result, (list, tuple)):
+        sentiment = result[0]
+        emotion = result[1] if len(result) > 1 else "Unknown"
+    else:
+        sentiment = result
+        emotion = "Unknown"
+
+    return jsonify({
+        "sentiment": sentiment,
+        "emotion": emotion
+    })
+
+#  ADMIN
+from models import User, Feedback
+
 @app.route('/admin')
 @login_required
 def admin():
@@ -358,14 +506,30 @@ def admin():
         abort(403)
 
     users = User.query.all()
-    return render_template('admin.html', users=users)
+    feedbacks = Feedback.query.order_by(Feedback.id.desc()).all()  
 
+    return render_template(
+        'admin.html',
+        users=users,
+        feedbacks=feedbacks
+    )
+
+@app.route('/delete_feedback/<int:id>', methods=['POST'])
+@login_required
+def delete_feedback(id):
+    if current_user.role != 'admin':
+        abort(403)
+
+    feedback = Feedback.query.get_or_404(id)
+    db.session.delete(feedback)
+    db.session.commit()
+
+    return redirect('/admin')
+   
 from flask import send_file
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib import colors
 import matplotlib.pyplot as plt
-
 @app.route('/download_report')
 @login_required
 def download_report():
@@ -388,87 +552,72 @@ def download_report():
 
     chart_path = "chart.png"
 
-    plt.figure()
-    plt.pie(values, labels=labels, autopct='%1.1f%%')
-    plt.title("Sentiment Distribution")
+    plt.figure(figsize=(5,5))
+
+    plt.pie(
+        values,
+        labels=labels,
+        autopct='%1.1f%%',
+        colors=['#22c55e','#ef4444','#eab308'],
+        wedgeprops={'width': 0.4}
+    )
+
+    plt.text(0, 0, f"{total}\nTotal", ha='center', va='center', fontsize=14)
+
     plt.savefig(chart_path)
     plt.close()
 
-    pdf_path = "report.pdf"
-    doc = SimpleDocTemplate(pdf_path)
-
+    doc = SimpleDocTemplate("report.pdf")
     styles = getSampleStyleSheet()
     content = []
 
-    content.append(Paragraph("CX ANALYTICS REPORT", styles['Title']))
+    # 🔥 TITLE
+    content.append(Paragraph("AI REPORT", styles['Title']))
+    content.append(Spacer(1, 10))
+
+    # ✅ SUMMARY
+    content.append(Paragraph("<b>Summary:</b>", styles['Heading3']))
+    content.append(Paragraph(ai_summary, styles['Normal']))
+    content.append(Spacer(1, 10))
+
+    # ✅ PROBLEMS
+    content.append(Paragraph("<b>Problems:</b>", styles['Heading3']))
+    if ai_problems:
+        for p in ai_problems:
+            content.append(Paragraph(f"• {p}", styles['Normal']))
+    else:
+        content.append(Paragraph("No problems detected", styles['Normal']))
+
+    content.append(Spacer(1, 10))
+
+    # ✅ SUGGESTIONS
+    content.append(Paragraph("<b>Suggestions:</b>", styles['Heading3']))
+    if ai_suggestions:
+        for s in ai_suggestions:
+            content.append(Paragraph(f"• {s}", styles['Normal']))
+    else:
+        content.append(Paragraph("No suggestions available", styles['Normal']))
+
     content.append(Spacer(1, 20))
 
-    content.append(Paragraph(f"Total Feedback: {total}", styles['Normal']))
+    # 📊 CHART TITLE
+    content.append(Paragraph("<b>Sentiment Distribution</b>", styles['Heading2']))
+    content.append(Spacer(1, 10))
+
+    # 📊 STATS
+    content.append(Paragraph(f"Total: {total}", styles['Normal']))
     content.append(Paragraph(f"Positive: {positive}", styles['Normal']))
     content.append(Paragraph(f"Negative: {negative}", styles['Normal']))
     content.append(Paragraph(f"Neutral: {neutral}", styles['Normal']))
 
-    content.append(Spacer(1, 20))
+    content.append(Spacer(1, 15))
 
-    table_data = [
-        ["Type", "Count"],
-        ["Positive", positive],
-        ["Negative", negative],
-        ["Neutral", neutral]
-    ]
-
-    table = Table(table_data, colWidths=[200, 100])
-
-    table.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.grey),
-        ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
-        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-        ('GRID', (0,0), (-1,-1), 1, colors.black),
-        ('BACKGROUND', (0,1), (-1,-1), colors.beige),
-    ]))
-
-    content.append(table)
-    content.append(Spacer(1, 20))
-
-    content.append(Paragraph("Sentiment Distribution", styles['Heading2']))
-    content.append(Spacer(1, 10))
-    content.append(Image(chart_path, width=350, height=250))
-
-    content.append(Spacer(1, 25))
-
-    if positive > negative:
-        insight = "Customers are mostly satisfied 😊"
-    elif negative > positive:
-        insight = "Negative feedback is higher ⚠️ Improve service"
-    else:
-        insight = "Feedback is balanced ⚖️"
-
-    content.append(Paragraph(f"AI Insight: {insight}", styles['Normal']))
-
-    content.append(Spacer(1, 20))
-
-    content.append(Paragraph("AI REPORT", styles['Heading2']))
-    content.append(Spacer(1, 10))
-
-    content.append(Paragraph("Summary:", styles['Heading3']))
-    content.append(Paragraph(ai_summary, styles['Normal']))
-
-    content.append(Spacer(1, 10))
-
-    content.append(Paragraph("Problems:", styles['Heading3']))
-    for p in ai_problems:
-        content.append(Paragraph(f"- {p}", styles['Normal']))
-
-    content.append(Spacer(1, 10))
-
-    content.append(Paragraph("Suggestions:", styles['Heading3']))
-    for s in ai_suggestions:
-        content.append(Paragraph(f"- {s}", styles['Normal']))
+    # 📊 DONUT CHART
+    content.append(Image(chart_path, width=300, height=300))
 
     doc.build(content)
 
-    return send_file(pdf_path, as_attachment=True)
-
+    return send_file("report.pdf", as_attachment=True)
 # 📈 ANALYTICS
 @app.route('/analytics')
 @login_required
@@ -546,19 +695,43 @@ def customers():
 
     return render_template('customers.html', feedbacks=feedbacks)
 # report
+from flask import session
+
+from flask import session
+
 @app.route('/reports')
 @login_required
 def reports():
     feedbacks = Feedback.query.filter_by(user_id=current_user.id).all()
 
-    # Generate AI insight (already written in your code)
-    insight = generate_insight(feedbacks)
+    
+    if "insight" not in session:
+        session["insight"] = generate_insight(feedbacks)
 
-    return render_template('reports.html', insight=insight)
+    insight = session["insight"]
 
+    # 📊 Stats
+    positive = sum(1 for f in feedbacks if f.sentiment == "Positive")
+    negative = sum(1 for f in feedbacks if f.sentiment == "Negative")
+    neutral = len(feedbacks) - (positive + negative)
+
+    return render_template(
+        'reports.html',
+        insight=insight,
+        positive=positive,
+        negative=negative,
+        neutral=neutral
+    )
+
+@app.route('/refresh_ai')
+@login_required
+def refresh_ai():
+    session.pop("insight", None)
+    return redirect('/reports')
 
 # 📄 ABOUT PAGE
 @app.route('/about')
+@login_required
 def about():
     return render_template('about.html')
 
@@ -568,23 +741,32 @@ def about():
 @login_required
 def settings():
 
+    user = current_user
+
+    feedbacks = Feedback.query.filter_by(user_id=user.id).all()
+
+    total = len(feedbacks)
+    positive = sum(1 for f in feedbacks if f.sentiment and f.sentiment.lower() == "positive")
+
+    ai_score = int((positive / total) * 100) if total > 0 else 0
+
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
         old_password = request.form.get('old_password')
 
-        user = current_user
+        if (username or password):
+            if not old_password or not check_password_hash(user.password, old_password):
+                flash("❌ Wrong current password", "error")
+                return redirect('/settings')
 
-        # 🔐 verify current password
-        if not check_password_hash(user.password, old_password):
-            flash("❌ Wrong current password", "error")
-            return redirect('/settings')
-
-        # username update
-        if username:
+        if username and username != user.username:
+            existing = User.query.filter_by(username=username).first()
+            if existing:
+                flash("❌ Username already taken", "error")
+                return redirect('/settings')
             user.username = username
 
-        # password update
         if password:
             if not is_strong_password(password):
                 flash("❌ Weak password", "error")
@@ -592,15 +774,18 @@ def settings():
 
             user.password = generate_password_hash(password)
 
-        user.email_notify = True if request.form.get('email_notify') == 'on' else False
-        user.ai_enabled = True if request.form.get('ai_toggle') == 'on' else False
+        user.email_notify = 'email_notify' in request.form
+        user.ai_enabled = 'ai_enabled' in request.form
 
         db.session.commit()
 
         flash("✅ Settings updated successfully", "success")
         return redirect('/settings')
 
-    return render_template('settings.html')
+    return render_template(
+        'settings.html',
+        ai_score=ai_score
+    )
 # 🗑 ACCOUNT DELETION
 @app.route('/delete_account', methods=['POST'])
 @login_required
@@ -656,8 +841,7 @@ def clear_data():
 @login_required
 def logout():
     logout_user()
-    return redirect('/login')
-
+    return redirect(url_for('login'))
 
 if __name__ == '__main__':
     with app.app_context():

@@ -1,24 +1,138 @@
 {% extends "base.html" %}
 
-
-{% block content %}
-<h2 class="text-3xl text-blue-400">About 💡</h2>
-
-<p>
-This is an AI-powered Customer Experience Analytics Platform.
-It analyzes customer feedback using sentiment analysis and generates insights.
-</p>
 {% block content %}
 
-<h2 class="text-3xl text-blue-400">About ℹ️</h2>
+<!-- 🔷 HEADER -->
+<div class="mb-8 fade-in">
+    <h2 class="text-3xl font-semibold text-white flex items-center gap-2">
+        About <span class="text-gray-400">ℹ️</span>
+    </h2>
 
-<p>This is a Customer Experience Analytics Platform.</p>
+    <!-- 🔥 Typing Effect -->
+    <p id="typingText" class="text-gray-400 text-sm mt-2"></p>
+</div>
 
-<ul class="mt-4">
-    <li>✔ Flask</li>
-    <li>✔ SQLAlchemy</li>
-    <li>✔ Chart.js</li>
-    <li>✔ AI Sentiment Analysis</li>
-</ul>
+<div class="max-w-5xl mx-auto space-y-8 fade-in">
+
+    <!-- 🚀 MAIN CARD (GLASS) -->
+    <div class="p-6 rounded-xl backdrop-blur-lg bg-white/5 border border-white/10 shadow-lg
+    transition-all duration-300 hover:scale-[1.01] hover:shadow-xl">
+
+        <h3 class="text-lg font-semibold text-blue-400 mb-4">
+            🚀 CX Analytics
+        </h3>
+
+        <p class="text-gray-300 text-sm leading-relaxed mb-4">
+            CX Analytics is a smart platform designed to analyze customer feedback using AI-powered sentiment analysis.
+            It helps businesses understand customer satisfaction, identify issues, and improve overall experience.
+        </p>
+
+        <p class="text-gray-300 text-sm leading-relaxed">
+            Built using Flask, Tailwind CSS, and modern AI tools to deliver a fast, clean, and intuitive dashboard.
+        </p>
+
+    </div>
+
+    <!-- 🎯 MISSION -->
+    <div class="p-6 rounded-xl backdrop-blur-lg bg-white/5 border border-white/10 shadow-lg
+    transition-all duration-300 hover:scale-[1.01] hover:shadow-xl">
+
+        <h3 class="text-lg font-semibold text-green-400 mb-3">
+            🎯 Our Mission
+        </h3>
+
+        <p class="text-gray-300 text-sm leading-relaxed">
+            Our mission is to simplify customer feedback analysis using AI so businesses can make smarter decisions,
+            improve user experience, and grow faster with data-driven insights.
+        </p>
+
+    </div>
+
+    <!-- 👨‍💻 TEAM -->
+    <div>
+        <h3 class="text-lg font-semibold text-yellow-400 mb-4">
+            👨‍💻 Developers
+        </h3>
+
+        <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-5">
+
+            <!-- CARD -->
+            <div class="p-5 rounded-xl backdrop-blur-lg bg-white/5 border border-white/10 text-center
+            transition-all duration-300 hover:scale-105 hover:shadow-xl">
+
+                <img src="https://api.dicebear.com/7.x/initials/svg?seed=Abhigyan"
+                     class="w-16 h-16 mx-auto rounded-full mb-3">
+
+                <h4 class="text-white font-medium">Abhigyan Khare</h4>
+                <p class="text-gray-400 text-xs mb-2">Full Stack Developer</p>
+
+                <a href="#" class="text-gray-400 hover:text-white text-sm">🐙 GitHub</a>
+
+            </div>
+
+            <div class="p-5 rounded-xl backdrop-blur-lg bg-white/5 border border-white/10 text-center
+            transition-all duration-300 hover:scale-105 hover:shadow-xl">
+
+                <img src="https://api.dicebear.com/7.x/initials/svg?seed=Oshiva"
+                     class="w-16 h-16 mx-auto rounded-full mb-3">
+
+                <h4 class="text-white font-medium">Oshiva Singh</h4>
+                <p class="text-gray-400 text-xs mb-2">UI/UX Designer</p>
+
+                <a href="#" class="text-gray-400 hover:text-white text-sm">🐙 GitHub</a>
+
+            </div>
+
+            <div class="p-5 rounded-xl backdrop-blur-lg bg-white/5 border border-white/10 text-center
+            transition-all duration-300 hover:scale-105 hover:shadow-xl">
+
+                <img src="https://api.dicebear.com/7.x/initials/svg?seed=Ashish"
+                     class="w-16 h-16 mx-auto rounded-full mb-3">
+
+                <h4 class="text-white font-medium">Ashish Agarwal</h4>
+                <p class="text-gray-400 text-xs mb-2">Backend Developer</p>
+
+                <a href="#" class="text-gray-400 hover:text-white text-sm">🐙 GitHub</a>
+
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- 🔥 Typing Animation Script -->
+<script>
+const text = "AI-powered customer insights made simple.";
+let i = 0;
+
+function typeEffect() {
+    if (i < text.length) {
+        document.getElementById("typingText").innerHTML += text.charAt(i);
+        i++;
+        setTimeout(typeEffect, 30);
+    }
+}
+
+typeEffect();
+</script>
+
+<!-- 🔥 Fade Animation -->
+<style>
+.fade-in {
+    animation: fadeIn 0.8s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
 
 {% endblock %}

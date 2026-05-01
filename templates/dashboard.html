@@ -1,297 +1,386 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2 class="text-4xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-    Dashboard Overview 🚀
-</h2>
-<div class="flex gap-3 mb-4">
+<div class="fade-in">
 
+<!--  HEADER -->
+<div class="flex justify-between items-center mb-6">
+
+    <div>
+        <h2 class="text-3xl font-semibold text-white flex items-center gap-2">
+            Dashboard Overview 🚀
+        </h2>
+        <p class="text-gray-400 text-sm mt-1">
+            AI-powered customer insights & sentiment intelligence
+        </p>
+    </div>
+
+    <div class="text-xs text-green-400 bg-green-500/10 px-3 py-1 rounded-full">
+        🧠 AI Active
+    </div>
+
+</div>
+
+<!-- 🔘 VIEW SWITCH -->
+<div class="flex gap-3 mb-6">
     <a href="/dashboard?view=my"
-       class="px-4 py-2 rounded-lg 
-       {% if view == 'my' %}
-           bg-blue-500 text-white
-       {% else %}
-           bg-white/10 text-gray-300
-       {% endif %}">
+       class="px-4 py-2 rounded-lg transition
+       {% if view == 'my' %}bg-blue-500 text-white{% else %}bg-white/10 text-gray-300{% endif %}">
        👤 My Data
     </a>
 
     {% if current_user.role == 'admin' %}
     <a href="/dashboard?view=all"
-       class="px-4 py-2 rounded-lg 
-       {% if view == 'all' %}
-           bg-purple-500 text-white
-       {% else %}
-           bg-white/10 text-gray-300
-       {% endif %}">
+       class="px-4 py-2 rounded-lg transition
+       {% if view == 'all' %}bg-purple-500 text-white{% else %}bg-white/10 text-gray-300{% endif %}">
        🌐 All Data
     </a>
     {% endif %}
-
 </div>
-<!-- ALERT -->
+
+<!-- 🚨 ALERT -->
 {% if alert %}
-<div class="bg-gradient-to-r from-red-600 to-red-400 p-4 rounded-xl mb-6 text-center animate-pulse">
+<div class="bg-red-500/20 border border-red-400 p-4 rounded-xl mb-6 text-center animate-pulse">
     {{ alert }}
 </div>
 {% endif %}
 
-<!-- STATS -->
+<!-- 📊 STATS -->
 <div class="grid grid-cols-5 gap-4 mb-6">
 
-    <div class="glass card p-6 text-center">
-        <h4>📊 Total</h4>
-        <p class="text-3xl font-bold text-blue-400">{{ total }}</p>
+    {% macro stat(title,value,color) %}
+    <div class="card">
+        <p class="text-gray-400 text-sm">{{ title }}</p>
+        <p class="text-4xl font-bold {{ color }} mt-1">{{ value }}</p>
+        <p class="text-xs text-gray-500 mt-1">Updated now</p>
     </div>
+    {% endmacro %}
 
-    <div class="glass card p-6 text-center">
-        <h4>😊 Positive</h4>
-        <p class="text-3xl font-bold text-green-400">{{ positive }}</p>
-    </div>
-
-    <div class="glass card p-6 text-center">
-        <h4>😡 Negative</h4>
-        <p class="text-3xl font-bold text-red-400">{{ negative }}</p>
-    </div>
-
-    <div class="glass card p-6 text-center">
-        <h4>📈 Positive %</h4>
-        <p class="text-3xl font-bold text-yellow-400">{{ positive_percent }}%</p>
-    </div>
-    <div class="glass card p-6 text-center">
-        <h4>🧠 Top Emotion</h4>
-        <p class="text-3xl font-bold text-purple-400">{{ top_emotion }}</p>
-    </div>
-
+    {{ stat("Total", total, "text-blue-400") }}
+    {{ stat("Positive", positive, "text-green-400") }}
+    {{ stat("Negative", negative, "text-red-400") }}
+    {{ stat("Positive %", positive_percent ~ "%", "text-yellow-400") }}
+    {{ stat("Top Emotion", top_emotion, "text-purple-400") }}
 
 </div>
 
-<!-- HEALTH SCORE -->
-<div class="glass card p-4 mb-6 text-center border border-yellow-400 shadow-lg">
+<div class="card mt-6 text-center">
+    <h3 class="text-yellow-400 mb-2">📊 Model Performance</h3>
 
-    {% if positive_percent >= 70 %}
-        <h2 class="text-green-400 text-2xl font-bold animate-pulse">
-            🟢 Excellent: {{ positive_percent }}%
-        </h2>
-    {% elif positive_percent >= 40 %}
-        <h2 class="text-yellow-400 text-2xl font-bold animate-pulse">
-            🟡 Average: {{ positive_percent }}%
-        </h2>
-    {% else %}
-        <h2 class="text-red-400 text-2xl font-bold animate-pulse">
-            🔴 Poor: {{ positive_percent }}%
-        </h2>
-    {% endif %}
+    <p>Accuracy: <span class="text-green-400">{{ accuracy }}%</span></p>
+    <p>Precision: <span class="text-blue-400">{{ precision }}%</span></p>
+    <p>Recall: <span class="text-purple-400">{{ recall }}%</span></p>
+</div>
 
-    <p class="text-sm text-gray-400 mt-1">
-        Based on customer sentiment analysis
+<!-- 🧠 HEALTH -->
+<div class="card text-center mb-6 border border-yellow-400/30 relative overflow-hidden">
+
+    <div class="absolute inset-0 bg-gradient-to-r from-yellow-500/10 to-transparent blur-xl"></div>
+
+    <h2 class="text-2xl font-bold relative z-10">
+        {% if positive_percent >= 70 %}
+            <span class="text-green-400">🟢 Excellent</span>
+        {% elif positive_percent >= 40 %}
+            <span class="text-yellow-400">🟡 Moderate</span>
+        {% else %}
+            <span class="text-red-400">🔴 Critical</span>
+        {% endif %}
+        : {{ positive_percent }}%
+    </h2>
+
+    <p class="text-gray-400 text-sm mt-1 relative z-10">
+        AI evaluated customer experience health
     </p>
 
 </div>
 
 <div class="grid grid-cols-3 gap-6">
 
-    <!-- LEFT FORM -->
-    <div class="glass card p-6">
+    <!-- 📥 INPUT -->
+    <div class="card">
 
-        <!-- CSV -->
         <form method="POST" enctype="multipart/form-data" class="mb-4">
-            <input type="file" name="file" class="mb-2 w-full text-sm">
-            <button class="bg-green-500 hover:bg-green-600 p-2 w-full rounded">
-                Upload CSV
-            </button>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="file" name="file" class="input mb-2">
+            <button class="btn-green">Upload CSV</button>
         </form>
 
-        <!-- FORM -->
         <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input name="name" placeholder="Name" class="input">
+            <input name="phone" placeholder="Phone" class="input">
+            <input name="service" placeholder="Service" class="input">
 
-            <input name="name" placeholder="Name"
-                   class="w-full p-3 mb-3 bg-black/40 border border-gray-700 rounded-lg">
+            <textarea id="feedbackBox" name="feedback"
+                placeholder="Feedback"
+                class="input"></textarea>
 
-            <input name="phone" placeholder="Phone"
-                   class="w-full p-3 mb-3 bg-black/40 border border-gray-700 rounded-lg">
-
-            <input name="service" placeholder="Service"
-                   class="w-full p-3 mb-3 bg-black/40 border border-gray-700 rounded-lg">
-
-            <textarea id="feedbackBox" name="feedback" placeholder="Feedback"
-                      class="w-full p-3 mb-3 bg-black/40 border border-gray-700 rounded-lg"></textarea>
-
-            <!-- LIVE SENTIMENT -->
             <p id="liveSentiment" class="mb-3"></p>
 
-            <button class="bg-gradient-to-r from-blue-500 to-purple-600 p-3 w-full rounded-lg hover:scale-105 transition">
-                Analyze
-            </button>
+            <button class="btn-primary">Analyze</button>
         </form>
 
-   </div>
+    </div>
 
+    <!-- 📈 TREND -->
+    <div class="card col-span-2">
 
-    <!-- CHART -->
-    <div class="glass card p-6 col-span-2">
-        <h3 class="mb-4 text-blue-400">📈 Sentiment Trend</h3>
+        <div class="flex justify-between mb-3">
+            <h3 class="text-blue-400">📈 Sentiment Trend</h3>
+            <span class="text-xs text-gray-400">Real-time analysis</span>
+        </div>
+
         <canvas id="myChart"></canvas>
+
     </div>
 
 </div>
 
-<!-- PIE -->
-<div class="glass card p-6 mt-6 flex justify-center">
+<!-- 🍩 DONUT -->
+<div class="card mt-6 flex justify-center">
     <div class="w-72 h-72">
         <canvas id="pieChart"></canvas>
     </div>
 </div>
 
-<!-- AI INSIGHTS -->
-<div class="glass card p-6 mt-6">
-    <h3 class="text-blue-400 text-xl mb-4">🧠 AI Insights</h3>
+<!-- 🧠 AI INSIGHTS -->
+<div class="card mt-6">
+    <h3 class="text-xl text-blue-400 mb-2">🧠 AI Insights</h3>
 
-    <div class="text-gray-300 space-y-3">
-        {% for line in insight.split('\n') %}
-            {% if "Summary:" in line %}
-                <h3 class="text-green-400 text-lg font-semibold">📊 {{ line }}</h3>
-            {% elif "Problems:" in line %}
-                <h3 class="text-red-400 text-lg font-semibold">⚠️ {{ line }}</h3>
-            {% elif "Suggestions:" in line %}
-                <h3 class="text-blue-400 text-lg font-semibold">💡 {{ line }}</h3>
-            {% elif line.startswith('-') %}
-                <p class="ml-4">• {{ line[1:] }}</p>
-            {% else %}
-                <p>{{ line }}</p>
-            {% endif %}
-        {% endfor %}
+   <div class="space-y-4 text-gray-300">
+
+    <!-- Summary -->
+    <div>
+        <h3 class="text-green-400 font-semibold text-lg">📊 Summary</h3>
+        <p class="mt-1 leading-relaxed">
+            {{ insight.summary }}
+        </p>
     </div>
+
+    <!-- Problems -->
+    <div>
+        <h3 class="text-red-400 font-semibold text-lg">⚠ Problems</h3>
+        <ul class="mt-2 space-y-1">
+            {% for p in insight.problems %}
+                <li class="ml-4">• {{ p }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Suggestions -->
+    <div>
+        <h3 class="text-blue-400 font-semibold text-lg">💡 Suggestions</h3>
+        <ul class="mt-2 space-y-1">
+            {% for s in insight.suggestions %}
+                <li class="ml-4">• {{ s }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
 </div>
 
-<!-- TABLE -->
-<div class="glass card p-6 mt-6">
+<!-- 📋 TABLE -->
+<div class="card mt-6">
     <table class="w-full text-left">
-        <tr class="border-b border-gray-600">
-            <th>Name</th>
-            <th>Phone</th>
-            <th>Service</th>
-            <th>Feedback</th>
-            <th>Sentiment</th>
-            <th>Emotion</th>
+
+        <tr class="border-b border-gray-700 text-gray-400">
+            <th class="p-3">Name</th>
+            <th class="p-3">Phone</th>
+            <th class="p-3">Service</th>
+            <th class="p-3">Feedback</th>
+            <th class="p-3">Sentiment</th>
+            <th class="p-3">Emotion</th>
         </tr>
 
         {% for f in feedbacks %}
-        <tr class="border-b border-gray-700 hover:bg-white/5">
-            <td>{{ f.name }}</td>
-            <td>{{ f.phone }}</td>
-            <td>{{ f.service }}</td>
-            <td>{{ f.text }}</td>
-            <td>{{ f.sentiment }}</td>
-            <td>{{ f.emotion }}</td>
+        <tr class="border-b border-gray-800 hover:bg-white/5">
+
+            <td class="p-3">{{ f.name }}</td>
+            <td class="p-3 text-gray-400">{{ f.phone }}</td>
+            <td class="p-3 text-gray-400">{{ f.service }}</td>
+            <td class="p-3 text-gray-500 max-w-xs truncate">{{ f.text }}</td>
+
+            <td class="p-3">
+                <span class="badge
+                {% if f.sentiment=='Positive' %}green
+                {% elif f.sentiment=='Negative' %}red
+                {% else %}yellow{% endif %}">
+                {{ f.sentiment }}
+                </span>
+            </td>
+
+            <td class="p-3">
+                <span class="badge">{{ f.emotion }}</span>
+            </td>
+
         </tr>
         {% endfor %}
+
     </table>
 </div>
 
-<!-- CHARTS -->
+</div>
+
+<!-- 🔥 STYLES -->
+<style>
+.card{
+    padding:20px;
+    background:rgba(255,255,255,0.05);
+    border-radius:12px;
+    border:1px solid rgba(255,255,255,0.08);
+    transition: all 0.35s ease;
+}
+.card:hover{
+    transform:translateY(-6px) scale(1.01);
+    box-shadow:0 12px 30px rgba(0,0,0,0.4);
+}
+
+.fade-in{
+    animation:fadeIn 0.8s ease-in-out;
+}
+@keyframes fadeIn{
+    from{opacity:0; transform:translateY(10px);}
+    to{opacity:1; transform:translateY(0);}
+}
+
+.input{
+    width:100%;
+    padding:10px;
+    margin-bottom:10px;
+    border-radius:8px;
+    background:#111827;
+    border:1px solid #374151;
+}
+
+.btn-primary{
+    width:100%;
+    padding:10px;
+    border-radius:8px;
+    background:linear-gradient(to right,#3b82f6,#9333ea);
+}
+.btn-green{
+    width:100%;
+    padding:10px;
+    border-radius:8px;
+    background:#16a34a;
+}
+
+.badge{
+    padding:4px 10px;
+    border-radius:999px;
+    font-size:12px;
+}
+.green{background:#22c55e20;color:#22c55e;}
+.red{background:#ef444420;color:#ef4444;}
+.yellow{background:#eab30820;color:#eab308;}
+
+canvas{
+    filter: drop-shadow(0 0 12px rgba(59,130,246,0.2));
+}
+</style>
+
+<!-- 🔥 CHART -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
 const labels = {{ labels|tojson }};
 const dataValues = {{ data_values|tojson }};
 
-const positive = {{ positive }};
-const negative = {{ negative }};
-const neutral = {{ total - positive - negative }};
-
-// LINE CHART
-const ctx = document.getElementById('myChart').getContext('2d');
-
-const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-gradient.addColorStop(0, 'rgba(59,130,246,0.6)');
-gradient.addColorStop(1, 'rgba(147,51,234,0.1)');
-
-new Chart(ctx, {
+// 📈 LINE (SMOOTH)
+new Chart(document.getElementById('myChart'), {
     type: 'line',
     data: {
         labels: labels,
         datasets: [{
-            label: "Sentiment Trend",
             data: dataValues,
-            fill: true,
-            backgroundColor: gradient,
             borderColor: '#3b82f6',
-            tension: 0.4,
-            pointBackgroundColor: '#fff',
-            pointRadius: 5
-        }]
-    }
-});
-
-// DOUGHNUT CHART
-new Chart(document.getElementById('pieChart'), {
-    type: 'doughnut',
-    data: {
-        labels: ['Positive','Negative','Neutral'],
-        datasets: [{
-            data: [positive, negative, neutral],
-            backgroundColor: ['#22c55e','#ef4444','#eab308'],
-            borderWidth: 0
+            backgroundColor: 'rgba(59,130,246,0.15)',
+            fill: true,
+            tension: 0.45,
+            pointRadius: 0,
+            pointHoverRadius: 6,
+            borderWidth: 3
         }]
     },
     options: {
-        cutout: '70%'
+        animation: {
+            duration: 1200,
+            easing: 'easeOutQuart'
+        },
+        plugins: {
+            legend: { display:false }
+        }
     }
 });
 
-// 🔥 LIVE SENTIMENT (FINAL WORKING)
-const textarea = document.getElementById("feedbackBox");
-const sentimentBox = document.getElementById("liveSentiment");
-
-let timeout = null;
-
-if (textarea) {
-    textarea.addEventListener("input", () => {
-
-        const text = textarea.value;
-
-        if (text.length < 3) {
-            sentimentBox.innerText = "";
-            return;
-        }
-
-        clearTimeout(timeout);
-
-        timeout = setTimeout(async () => {
-            try {
-                sentimentBox.innerText = "⏳ Analyzing...";
-
-                const res = await fetch("/live_sentiment", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ text: text })
-                });
-
-                const data = await res.json();
-
-                if (data.sentiment === "Positive") {
-                    sentimentBox.innerText = "😊 Positive";
-                    sentimentBox.className = "text-green-400 mb-3";
-                } 
-                else if (data.sentiment === "Negative") {
-                    sentimentBox.innerText = "😡 Negative";
-                    sentimentBox.className = "text-red-400 mb-3";
-                } 
-                else {
-                    sentimentBox.innerText = "😐 Neutral";
-                    sentimentBox.className = "text-yellow-400 mb-3";
-                }
-
-            } catch (err) {
-                sentimentBox.innerText = "⚠️ Error detecting sentiment";
-                sentimentBox.className = "text-red-400 mb-3";
+// 🍩 DONUT (SMOOTH)
+new Chart(document.getElementById('pieChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Positive', 'Negative', 'Neutral'],
+        datasets: [{
+            data: [{{ positive }}, {{ negative }}, {{ total - positive - negative }}],
+            backgroundColor: ['#22c55e','#ef4444','#eab308'],
+            borderWidth: 0,
+            hoverOffset: 20
+        }]
+    },
+    options: {
+        cutout: '72%',
+        animation: {
+            animateRotate:true,
+            duration:1400,
+            easing:'easeOutExpo'
+        },
+        plugins: {
+            legend: {
+                labels: { color: 'white' }
             }
-        }, 400);
-    });
-}
+        }
+    }
+});
+</script>
+<script>
+const feedbackBox = document.getElementById("feedbackBox");
+const liveSentiment = document.getElementById("liveSentiment");
+
+feedbackBox.addEventListener("input", async () => {
+
+    const text = feedbackBox.value;
+
+    if(text.length < 3){
+        liveSentiment.innerText = "";
+        return;
+    }
+
+    try {
+        const res = await fetch("/live_sentiment", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include",  
+            body: JSON.stringify({ text: text })
+        });
+
+        const data = await res.json();
+
+        liveSentiment.innerHTML = `
+            <span class="${
+                data.sentiment === "Positive" ? "text-green-400" :
+                data.sentiment === "Negative" ? "text-red-400" :
+                "text-yellow-400"
+            }">
+            ${data.sentiment}
+            </span>
+        `;
+
+    } catch (error) {
+        console.error(error);  
+        liveSentiment.innerText = "Error...";
+    }
+
+});
 </script>
 
 {% endblock %}
