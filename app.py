@@ -64,11 +64,26 @@ def evaluate_model(feedbacks):
     return round(accuracy*100,2), round(precision*100,2), round(recall*100,2)
 # 🤖 OPTIONAL AI MODEL (safe fallback)
 try:
-    from transformers import pipeline
-    ai_model = pipeline("sentiment-analysis")
+    from textblob import TextBlob
     AI_ENABLED = True
-except:
+except ImportError:
     AI_ENABLED = False
+
+
+def get_sentiment(text):
+    if not AI_ENABLED:
+        return "Neutral", "Calm"
+
+    analysis = TextBlob(text)
+    polarity = analysis.sentiment.polarity
+
+    if polarity > 0:
+        return "Positive", "Happy"
+    elif polarity < 0:
+        return "Negative", "Angry"
+    else:
+        return "Neutral", "Calm"
+    
 
 app = Flask(__name__)
 
