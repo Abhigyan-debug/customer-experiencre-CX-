@@ -59,7 +59,7 @@ app = Flask(__name__)
 csrf = CSRFProtect(app)
 
 #  CONFIG
-app.config['SECRET_KEY'] = 'secret123'
+app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=7)
 
