@@ -1,5 +1,4 @@
 from flask import Flask, render_template, redirect, request, abort, flash, url_for, jsonify
-from sympy import content
 from models import db, User, Feedback
 from flask_wtf import CSRFProtect
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
@@ -8,7 +7,6 @@ from textblob import TextBlob
 from datetime import timedelta
 import csv
 from flask import Response
-from sympy import content
 import io
 import secrets
 import os
