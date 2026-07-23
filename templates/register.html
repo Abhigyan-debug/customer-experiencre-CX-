@@ -1,252 +1,219 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Register - CX Analytics</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Apply the saved theme before first paint -->
+    <script>
+    (function () {
+        try {
+            var t = localStorage.getItem('pulsecx-theme');
+            document.documentElement.dataset.theme = (t === 'light') ? 'light' : 'dark';
+        } catch (e) {
+            document.documentElement.dataset.theme = 'dark';
+        }
+    })();
+    </script>
 
+    <title>Register - PulseCX</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Icons -->
+    <script src="{{ url_for('static', filename='vendor/lucide.min.js') }}" defer></script>
+
+    <script src="{{ url_for('static', filename='js/theme.js') }}" defer></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: #020617;
-            overflow: hidden;
+        .login-layout {
+            display: flex;
+            min-height: 100vh;
+            background-color: var(--bg-main);
         }
-
-        /* Cursor Glow */
-        .cursor-glow {
-            position: fixed;
-            width: 260px;
-            height: 260px;
-            background: radial-gradient(circle, rgba(99,102,241,0.25), transparent 70%);
-            pointer-events: none;
-            transform: translate(-50%, -50%);
-            z-index: 0;
-        }
-
-        /* Particles */
-        .particle {
-            position: absolute;
-            width: 3px;
-            height: 3px;
-            background: rgba(255,255,255,0.15);
-            border-radius: 50%;
-            animation: float 10s infinite linear;
-        }
-
-        @keyframes float {
-            from { transform: translateY(0); opacity: 0; }
-            50% { opacity: 1; }
-            to { transform: translateY(-900px); opacity: 0; }
-        }
-
-        /* Card */
-        .card {
-            background: linear-gradient(
-                145deg,
-                rgba(255,255,255,0.06),
-                rgba(255,255,255,0.02)
-            );
-            backdrop-filter: blur(30px);
-
-            border-radius: 28px;
-            border: 1px solid rgba(255,255,255,0.08);
-
-            box-shadow:
-                0 25px 70px rgba(0,0,0,0.8),
-                inset 0 1px 1px rgba(255,255,255,0.05);
-
-            padding: 44px 36px;
-            width: 420px;
-
-            transition: transform 0.2s ease;
-            transform-style: preserve-3d;
-        }
-
-        /* Input */
-        .input {
-            background: rgba(0,0,0,0.65);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 12px;
-            padding: 14px 16px;
-            font-size: 14px;
-            transition: all 0.25s ease;
-        }
-
-        .input:focus {
-            border-color: #6366f1;
-            box-shadow: 0 0 18px rgba(99,102,241,0.5);
-            background: rgba(0,0,0,0.8);
-            outline: none;
-        }
-
-        /* Button */
-        .btn {
-            border-radius: 12px;
-            font-weight: 500;
-            padding: 14px;
+        .login-left {
+            flex: 1.2;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 80px 10%;
             position: relative;
-            overflow: hidden;
-            transition: all 0.25s ease;
         }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 30px rgba(99,102,241,0.7);
-        }
-
-        .btn::before {
-            content: "";
+        
+        .login-left::before {
+            content: '';
             position: absolute;
-            width: 200%;
-            height: 100%;
-            background: linear-gradient(120deg, transparent, rgba(255,255,255,0.4), transparent);
             top: 0;
-            left: -100%;
-            transition: 0.6s;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 0% 0%, rgba(0, 212, 182, 0.05) 0%, transparent 50%);
+            pointer-events: none;
         }
 
-        .btn:hover::before {
-            left: 100%;
+        .login-right {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            background-color: var(--bg-main);
+        }
+        .hero-title {
+            font-size: 4rem;
+            font-weight: 800;
+            margin-bottom: 24px;
+            color: var(--text-primary);
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+        }
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            max-width: 480px;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+        .feature-list {
+            list-style: none;
+            color: var(--text-secondary);
+        }
+        .feature-list li {
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.05rem;
+        }
+        .feature-list i {
+            color: var(--primary-color);
+            width: 20px;
+            height: 20px;
+        }
+        .input-group {
+            position: relative;
+        }
+        .input-group button {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+        
+        .logo-header {
+            position: absolute;
+            top: 40px;
+            left: 10%;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .logo-header i {
+            color: var(--primary-color);
         }
     </style>
 </head>
+<body>
 
-<body class="min-h-screen flex text-white">
+<button type="button" data-theme-toggle class="theme-toggle-fab" aria-label="Switch to light mode">
+    <i data-lucide="moon"></i>
+</button>
 
-<!-- Glow -->
-<div id="glow" class="cursor-glow"></div>
+<div class="login-layout">
+    <div class="login-left">
 
-<!-- Particles -->
-<script>
-for(let i=0;i<25;i++){
-    let p=document.createElement("div");
-    p.className="particle";
-    p.style.left=Math.random()*100+"%";
-    p.style.bottom="-10px";
-    p.style.animationDuration=(6+Math.random()*6)+"s";
-    document.body.appendChild(p);
-}
-</script>
+        <div class="logo-header">
+            <i data-lucide="bar-chart-2"></i>
+            PulseCX
+        </div>
 
-<!-- LEFT -->
-<div class="w-1/2 hidden lg:flex flex-col justify-center px-20 z-10">
-
-    <h1 class="text-6xl font-bold bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent">
-        Join CX Analytics
-    </h1>
-
-    <p class="mt-6 text-gray-400 text-lg max-w-md leading-relaxed">
-        Create your account and start exploring powerful analytics tools.
-    </p>
-
-    <div class="mt-10 space-y-4 text-gray-500 text-sm">
-        <p>✔ Fast onboarding</p>
-        <p>✔ Secure authentication</p>
-        <p>✔ Smart insights ready</p>
+        <h1 class="hero-title">Start building<br>with data</h1>
+        <p class="hero-subtitle">Create your account and start exploring powerful analytics tools with enterprise-grade security.</p>
+        
+        <ul class="feature-list">
+            <li><i data-lucide="check-circle"></i> Fast onboarding</li>
+            <li><i data-lucide="check-circle"></i> Secure authentication</li>
+            <li><i data-lucide="check-circle"></i> Smart insights ready</li>
+        </ul>
     </div>
+    
+    <div class="login-right">
+        <div class="auth-card">
+            <h2 class="auth-title">Create Account</h2>
+            <p class="auth-subtitle">Sign up to get started</p>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
 
-</div>
+            <form method="POST" action="/register">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" name="username" required placeholder="Choose a username" class="input-field">
+                </div>
 
-<!-- RIGHT -->
-<div class="w-full lg:w-1/2 flex items-center justify-center z-10">
+                <div class="form-group">
+                    <label class="form-label">Email (optional)</label>
+                    <input type="email" name="email" placeholder="you@example.com" class="input-field">
+                    <p class="text-secondary" style="font-size: 0.8rem; margin-top: 4px;">Needed if you ever want to use "Forgot password" - you can also add it later in Settings.</p>
+                </div>
 
-    <div id="card" class="card">
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label class="form-label">Password</label>
+                    <div class="input-group">
+                        <input type="password" name="password" id="password" required placeholder="Create a password" class="input-field">
+                        <button type="button" onclick="togglePassword()">
+                            <i id="eyeIcon" data-lucide="eye"></i>
+                        </button>
+                    </div>
+                    <p class="text-secondary" style="font-size: 0.8rem; margin-top: 8px;">Must be 8+ chars with A-Z, number & symbol</p>
+                </div>
 
-        <h2 class="text-3xl font-semibold mb-1 bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent">
-            Create Account
-        </h2>
-
-        <p class="text-gray-400 text-sm mb-6">
-            Start your journey
-        </p>
-
-        <form method="POST">
-         <!--  CSRF TOKEN ADD HERE -->
-         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <!-- Username -->
-            <input type="text" name="username" required
-                   placeholder="Choose a username"
-                   class="input w-full mb-4">
-
-            <!-- Password -->
-            <div class="relative mb-2">
-                <input type="password" name="password" id="password" required
-                       placeholder="Create a password"
-                       class="input w-full pr-10">
-
-                <button type="button" onclick="togglePassword()"
-                        class="absolute right-3 top-3 text-gray-400 hover:text-white">
-                    <i id="eyeIcon" data-lucide="eye"></i>
+                <button type="submit" class="btn-primary w-full mt-4" style="padding: 14px; font-size: 1.05rem;">
+                    Sign Up
                 </button>
-            </div>
-
-            <p class="text-xs text-gray-500 mb-5 text-center">
-                Must be 8+ chars with A-Z, number & symbol
+            </form>
+            
+            <p class="text-center mt-6 text-secondary" style="font-size: 0.95rem;">
+                Already have an account? <a href="/login" class="text-primary font-semibold">Log in</a>
             </p>
-            <input type="text" name="admin_code"
-            placeholder="Admin Code (optional)"
-             class="input w-full mb-4">
-
-            <!-- Button -->
-            <button class="btn w-full bg-gradient-to-r from-indigo-500 to-purple-600">
-                Create Account
-            </button>
-
-        </form>
-
-        <!-- Footer -->
-        <p class="text-center mt-6 text-sm text-gray-400">
-            Already have an account?
-            <a href="/login" class="text-indigo-400 hover:underline">Login</a>
-        </p>
-
+        </div>
     </div>
-
 </div>
 
 <script>
-lucide.createIcons();
+    document.addEventListener('DOMContentLoaded', function () { lucide.createIcons(); });
 
-/* Toggle */
-function togglePassword() {
-    const pwd = document.getElementById("password");
-    const icon = document.getElementById("eyeIcon");
-
-    if (pwd.type === "password") {
-        pwd.type = "text";
-        icon.setAttribute("data-lucide", "eye-off");
-    } else {
-        pwd.type = "password";
-        icon.setAttribute("data-lucide", "eye");
+    function togglePassword() {
+        const pwd = document.getElementById("password");
+        const icon = document.getElementById("eyeIcon");
+        
+        if (pwd.type === "password") {
+            pwd.type = "text";
+            icon.setAttribute("data-lucide", "eye-off");
+        } else {
+            pwd.type = "password";
+            icon.setAttribute("data-lucide", "eye");
+        }
+        lucide.createIcons();
     }
-    lucide.createIcons();
-}
-
-/* Glow */
-document.addEventListener("mousemove", e=>{
-    const glow=document.getElementById("glow");
-    glow.style.left=e.clientX+"px";
-    glow.style.top=e.clientY+"px";
-});
-
-/* Tilt */
-const card = document.getElementById("card");
-card.addEventListener("mousemove", e=>{
-    const rect = card.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    const rotateX = -(y / rect.height - 0.5) * 6;
-    const rotateY = (x / rect.width - 0.5) * 6;
-
-    card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-});
-
-card.addEventListener("mouseleave", ()=>{
-    card.style.transform = "rotateX(0) rotateY(0)";
-});
 </script>
 
 </body>

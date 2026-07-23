@@ -1,176 +1,113 @@
 <!DOCTYPE html>
 <html class="transition-colors duration-300">
 <head>
-    <title>CX Analytics</title>
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <!-- Tailwind -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
+    <!-- Apply the saved theme before first paint, to avoid a flash of the
+         wrong theme. Deliberately synchronous and inline, ahead of the
+         stylesheet, since it just sets an attribute the CSS reads. -->
     <script>
-    tailwind.config = {
-      darkMode: 'class'
-    }
+    (function () {
+        try {
+            var t = localStorage.getItem('pulsecx-theme');
+            document.documentElement.dataset.theme = (t === 'light') ? 'light' : 'dark';
+        } catch (e) {
+            document.documentElement.dataset.theme = 'dark';
+        }
+    })();
     </script>
 
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <title>CX Analytics</title>
+
+    <!-- Fonts - preconnect so the (unavoidable, still-external) font request
+         doesn't pay DNS+TLS setup time on top of the actual font fetch. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Custom design system (replaces the in-browser Tailwind JIT compiler
+         that used to run here - see static/style.css for the full utility layer) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <!-- Vendor JS is self-hosted (static/vendor/) instead of loaded from 3
+         separate CDN origins (jsdelivr/unpkg/cdnjs) - that meant every page
+         navigation paid a fresh DNS+TLS handshake per origin, and worse,
+         none of these were `defer`red, so the browser couldn't paint
+         anything until all three had fully downloaded and executed. Now
+         self-hosted + deferred: parsing/painting the page no longer waits
+         on them, and every inline script that needs Chart/lucide/THREE is
+         wrapped in a DOMContentLoaded listener below (deferred scripts run
+         before that event fires, so ordering is guaranteed regardless of
+         where in the DOM each piece sits). -->
+    <script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='vendor/lucide.min.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='vendor/three.min.js') }}" defer></script>
+
+    <!-- Custom dropdown (replaces native <select> popups) -->
+    <script src="{{ url_for('static', filename='js/custom-select.js') }}" defer></script>
+
+    <!-- KPI card count-up animation, shared by every page with live stats -->
+    <script src="{{ url_for('static', filename='js/kpi-count.js') }}" defer></script>
+
+    <!-- Theme toggle -->
+    <script src="{{ url_for('static', filename='js/theme.js') }}" defer></script>
 
     <!-- Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
-        body {
-            font-family: 'Poppins', sans-serif;
+        /* Page-structural rules that only apply within this shell layout.
+           The design-system classes (.glass, .tilt-card, .sidebar, .nav-item,
+           .active, etc.) now live in static/style.css as theme-aware rules -
+           see the "App shell" section there - so every page shares one
+           definition instead of base.html silently overriding it with a
+           hardcoded dark-only copy. */
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -10;
         }
 
-        button, a {
-          transition: all 0.3s ease;
-        }
-
-        button:hover {
-          transform: scale(1.05);
-          box-shadow: 0 0 20px rgba(59,130,246,0.6);
-        }
-
-        .glass {
-         background: rgba(255, 255, 255, 0.07);
-         backdrop-filter: blur(25px);
-         border-radius: 20px;
-         border: 1px solid rgba(255,255,255,0.15);
-         box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-        }
-
-        /* 🔥 AI BACKGROUND GLOW */
-        .ai-glow{
-            position:absolute;
-            inset:0;
-            background:radial-gradient(circle at top,#3b82f650,transparent 70%);
-            opacity:0.12;
-            pointer-events:none;
-            z-index:0; /* 🔥 ADD */
-        }
-
-        /* 🔥 SIDEBAR */
-        .sidebar {
-         width: 250px;
-         background: rgba(10,10,20,0.6);
-         backdrop-filter: blur(25px);
-         border-right: 1px solid rgba(255,255,255,0.1);
-         box-shadow: 0 0 40px rgba(59,130,246,0.15);
-         position: relative;
-         animation: slideIn 0.6s ease;
-         z-index:10; /* 🔥 ADD */
-        }
-
-        .sidebar::before{
-            content:"";
-            position:absolute;
-            inset:0;
-            border-radius:20px;
-            background:linear-gradient(180deg,#3b82f6,#9333ea,transparent);
-            opacity:0.08;
-        }
-
-        /* 🔥 NAV */
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .nav-item:hover {
-          background: linear-gradient(135deg, rgba(59,130,246,0.25), rgba(147,51,234,0.25));
-          transform: translateX(10px) scale(1.05);
-          box-shadow: 0 0 20px rgba(59,130,246,0.4);
-        }
-
-        .nav-item:hover i{
-            transform: scale(1.3) rotate(8deg);
-        }
-
-        .active {
-         background: linear-gradient(135deg, #3b82f6, #9333ea);
-         box-shadow: 0 0 25px rgba(59,130,246,0.6);
-        }
-
-        .active::before{
-            content:"";
-            position:absolute;
-            left:0;
-            top:10%;
-            height:80%;
-            width:4px;
-            background:#60a5fa;
-            border-radius:10px;
-        }
-
-        .nav-item i{
-            transition: all 0.3s ease;
-        }
-
-        /* 🔥 PAGE */
+        /* Page */
         .page {
             animation: fadeIn 0.6s ease-in-out;
+            position: relative;
+            z-index: 5;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes slideIn {
-            from { transform: translateX(-40px); opacity:0; }
-            to { transform: translateX(0); opacity:1; }
-        }
-
-        /* 🔥 FLOATING LOGO ANIMATION */
-        @keyframes floatSoft {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-4px); }
-            100% { transform: translateY(0px); }
-        }
-
-        .logo-float {
-            animation: floatSoft 4s ease-in-out infinite;
-        }
-
-        /* LOADER */
+        /* Loader */
         #loader {
             position: fixed;
             inset: 0;
-            background: #020617;
+            background: var(--bg-main);
             display: flex;
             justify-content: center;
             align-items: center;
             z-index: 9999;
-            pointer-events: none; /* 🔥 ADD */
+            pointer-events: none;
+            transition: background-color 0.3s ease;
         }
 
         .orb {
             width: 80px;
             height: 80px;
             border-radius: 50%;
-            background: radial-gradient(circle, #3b82f6, #9333ea);
-            animation: pulse 1.5s infinite ease-in-out;
+            background: radial-gradient(circle, #0099FF, #00D084);
+            animation: orbPulse 1.5s infinite ease-in-out;
+            box-shadow: 0 0 30px #0099FF;
         }
 
-        @keyframes pulse {
+        @keyframes orbPulse {
             0% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.4); opacity: 0.3; }
+            50% { transform: scale(1.3); opacity: 0.3; }
             100% { transform: scale(1); opacity: 0.8; }
         }
     </style>
 </head>
 
-<body class="bg-gradient-to-br from-black via-gray-900 to-blue-900 text-white dark:bg-gray-900 transition-colors duration-300">
+<body>
 
-<div class="fixed inset-0 -z-10 bg-gradient-to-br from-black via-indigo-900 to-black dark:from-gray-900 dark:via-black"></div>
+<div id="canvas-container"></div>
 
 <!-- Loader -->
 <div id="loader">
@@ -180,42 +117,62 @@
 <div class="flex">
 
     <!-- SIDEBAR -->
-    <div class="sidebar glass p-6 flex flex-col justify-between h-screen sticky top-0 dark:bg-gray-900">
+    <div class="sidebar flex flex-col justify-between h-screen sticky top-0 p-6">
 
         <div class="ai-glow"></div>
 
-        <div>
-            <h1 class="text-2xl font-semibold mb-8 flex items-center gap-3 group logo-float">
-                <span>🚀</span>
-                <span class="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                    CX Analytics
+        <div class="relative z-10">
+            <h1 class="text-2xl font-bold mb-10 flex items-center gap-3">
+                <i data-lucide="hexagon" class="text-primary w-8 h-8"></i>
+                <span class="text-white tracking-wide drop-shadow-lg">
+                    PulseCX
                 </span>
-                <span class="text-[10px] bg-blue-500/20 px-2 py-1 rounded-md text-blue-300 animate-pulse">
+                <span class="text-2xs bg-primary/20 px-2 py-1 rounded-md text-primary font-bold tracking-wider animate-pulse border border-primary/30">
                     AI
                 </span>
             </h1>
 
-            <nav class="space-y-3 text-lg">
-              <a href="/dashboard" class="nav-item">Dashboard</a>
-              <a href="/analytics" class="nav-item">Analytics</a>
-              <a href="/customers" class="nav-item">Customers</a>
-              <a href="/reports" class="nav-item">Reports</a>
+            <nav class="space-y-3">
+              <a href="/dashboard" class="nav-item {% if request.path == '/dashboard' %}active{% endif %}">
+                  <i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard
+              </a>
+              <a href="/analytics" class="nav-item {% if request.path == '/analytics' %}active{% endif %}">
+                  <i data-lucide="pie-chart" class="w-5 h-5"></i> Analytics
+              </a>
+              <a href="/customers" class="nav-item {% if request.path == '/customers' %}active{% endif %}">
+                  <i data-lucide="users" class="w-5 h-5"></i> Customers
+              </a>
+              <a href="/reports" class="nav-item {% if request.path == '/reports' %}active{% endif %}">
+                  <i data-lucide="file-text" class="w-5 h-5"></i> Reports
+              </a>
 
              {% if current_user.is_authenticated and current_user.role == 'admin' %}
-             <a href="/admin" class="nav-item"> Admin Panel</a>
+             <a href="/admin" class="nav-item {% if request.path == '/admin' %}active{% endif %}">
+                 <i data-lucide="shield" class="w-5 h-5"></i> Admin
+             </a>
              {% endif %}
 
-             <a href="/settings" class="nav-item">Settings</a>
-             <a href="/about" class="nav-item">About</a>
+             <a href="/settings" class="nav-item {% if request.path == '/settings' %}active{% endif %}">
+                 <i data-lucide="settings" class="w-5 h-5"></i> Settings
+             </a>
           </nav>
         </div>
 
-        <!-- LOGOUT FIX -->
-        <a href="{{ url_for('logout') }}" 
-           class="relative z-50 text-red-400 flex items-center gap-2 hover:text-red-500 hover:translate-x-2 transition">
-            <i data-lucide="log-out"></i>
-            Logout
-        </a>
+        <div class="relative z-50" style="display: flex; flex-direction: column; gap: 8px;">
+            <button type="button" data-theme-toggle
+               class="nav-item"
+               style="width: 100%; text-align: left; cursor: pointer;"
+               aria-label="Switch to light mode">
+                <i data-lucide="moon" class="w-5 h-5"></i>
+                <span>Theme</span>
+            </button>
+
+            <a href="{{ url_for('logout') }}"
+               class="text-red-400 font-semibold flex items-center gap-3 p-3 rounded-xl hover:bg-red-500/10 hover:text-red-500 transition-all border border-transparent hover:border-red-500/30">
+                <i data-lucide="log-out" class="w-5 h-5"></i>
+                Logout
+            </a>
+        </div>
 
     </div>
 
@@ -225,30 +182,168 @@
 
 </div>
 
+<!-- Three.js Background Script -->
 <script>
-lucide.createIcons();
+// chart.js/lucide/three.js now load with `defer`, so this needs to wait
+// for DOMContentLoaded (deferred scripts finish before that event fires)
+// instead of running immediately at parse time, or THREE would still be
+// undefined at this point.
+document.addEventListener('DOMContentLoaded', function () {
+(function () {
+    const container = document.getElementById('canvas-container');
+    const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Reads the current theme's --bg-main straight from computed CSS instead
+    // of hardcoding a color, so the background follows the light/dark toggle
+    // without having to rebuild the whole scene.
+    function bgColorHex() {
+        const v = getComputedStyle(document.documentElement).getPropertyValue('--bg-main').trim();
+        return v || '#0B1220';
+    }
+
+    // The WebGL background was the single biggest ongoing CPU/GPU cost on
+    // every authenticated page - a continuous render loop running behind
+    // frosted-glass (backdrop-filter: blur) sidebar/cards, which forces the
+    // browser to recomposite that blur against a moving canvas every frame.
+    // That combination is what made the app feel laggy specifically after
+    // signing in (public pages don't have this shell). Using the static
+    // gradient fallback unconditionally here instead of only on
+    // prefers-reduced-motion - zero CPU/GPU cost, same visual mood.
+    const forceStaticBackground = true;
+    if (reduceMotion || forceStaticBackground) {
+        function paintFallback() {
+            container.style.background = 'radial-gradient(circle at top right, rgba(0,153,255,0.12), transparent 60%), ' + bgColorHex();
+        }
+        paintFallback();
+        document.addEventListener('theme-changed', paintFallback);
+        return;
+    }
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(new THREE.Color(bgColorHex()).getHex(), 0.0015);
+
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+    camera.position.z = 800;
+
+    // antialias:false - this is a soft, blurred-by-fog background of small
+    // points and thin lines, not sharp geometry, so MSAA cost here buys
+    // nothing visible. powerPreference nudges multi-GPU laptops toward the
+    // integrated GPU for what's purely a decorative background.
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: false, powerPreference: 'low-power' });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    // Capping pixel ratio avoids rendering 3-4x the visible pixels on retina/4K
+    // displays, which was the single biggest GPU cost of this background.
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+    container.appendChild(renderer.domElement);
+
+    // Particles - trimmed from 1500 to keep this a background flourish, not a load
+    const particlesGeometry = new THREE.BufferGeometry();
+    const particlesCount = 500;
+    const posArray = new Float32Array(particlesCount * 3);
+
+    for (let i = 0; i < particlesCount * 3; i++) {
+        posArray[i] = (Math.random() - 0.5) * 2000;
+    }
+
+    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+
+    const particleMaterial = new THREE.PointsMaterial({
+        size: 4,
+        color: 0x0099FF,
+        transparent: true,
+        opacity: 0.6,
+        blending: THREE.AdditiveBlending
+    });
+
+    const particlesMesh = new THREE.Points(particlesGeometry, particleMaterial);
+    scene.add(particlesMesh);
+
+    // 20 divisions instead of 40 - a quarter of the line segments for a
+    // grid that sits at 0.1 opacity behind fog anyway, so the extra density
+    // was never visible.
+    const gridHelper = new THREE.GridHelper(2000, 20, 0x0099FF, 0x0099FF);
+    gridHelper.position.y = -300;
+    gridHelper.material.opacity = 0.1;
+    gridHelper.material.transparent = true;
+    scene.add(gridHelper);
+
+    let mouseX = 0;
+    let mouseY = 0;
+
+    document.addEventListener('mousemove', (event) => {
+        mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+        mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+    });
+
+    const clock = new THREE.Clock();
+    let rafId = null;
+
+    // Cap at 60fps - on 120/144Hz displays requestAnimationFrame would
+    // otherwise fire (and fully re-render) twice as often as this motion
+    // needs, for no visible benefit.
+    const FRAME_INTERVAL = 1000 / 60;
+    let lastFrameTime = 0;
+
+    function animate(now) {
+        rafId = requestAnimationFrame(animate);
+
+        if (now - lastFrameTime < FRAME_INTERVAL) return;
+        lastFrameTime = now;
+
+        const elapsedTime = clock.getElapsedTime();
+
+        particlesMesh.rotation.y = elapsedTime * 0.05;
+        particlesMesh.rotation.x = elapsedTime * 0.02;
+
+        camera.position.x += (mouseX * 200 - camera.position.x) * 0.05;
+        camera.position.y += (mouseY * 200 - camera.position.y) * 0.05;
+        camera.lookAt(scene.position);
+
+        renderer.render(scene, camera);
+    }
+
+    animate(performance.now());
+
+    // Pause the render loop entirely while the tab isn't visible - a
+    // dashboard left open in a background tab was burning CPU/GPU for
+    // pixels nobody was looking at.
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
+        } else if (rafId === null) {
+            animate(performance.now());
+        }
+    });
+
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }, 150);
+    });
+
+    // Follow the light/dark toggle without tearing down and rebuilding the
+    // whole WebGL scene - just recolor the fog to match the new --bg-main.
+    document.addEventListener('theme-changed', () => {
+        scene.fog.color.set(bgColorHex());
+    });
+})();
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    lucide.createIcons();
+});
 
 window.addEventListener("load", () => {
     const loader = document.getElementById("loader");
-    loader.style.display = "none";  // 🔥 FIX
+    loader.style.opacity = '0';
+    setTimeout(() => { loader.style.display = "none"; }, 500);
 });
-</script>
-<script>
-function toggleDark() {
-    document.documentElement.classList.toggle("dark")
-
-    if (document.documentElement.classList.contains("dark")) {
-        localStorage.setItem("theme", "dark")
-    } else {
-        localStorage.setItem("theme", "light")
-    }
-}
-
-window.onload = () => {
-    if (localStorage.getItem("theme") === "dark") {
-        document.documentElement.classList.add("dark")
-    }
-}
 </script>
 
 </body>

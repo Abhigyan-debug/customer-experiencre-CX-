@@ -1,202 +1,270 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2 class="text-3xl font-semibold mb-6 text-white flex items-center gap-2">
-    Settings ⚙️
-</h2>
+<div class="dashboard-header mb-6">
+    <h1 class="page-title">Settings</h1>
+    <p class="page-subtitle">Manage your account, preferences, and API integrations</p>
+</div>
 
-<div class="grid grid-cols-2 gap-6 max-w-6xl">
+<div id="settingsLayout" style="display: grid; grid-template-columns: 250px 1fr; gap: 32px; max-width: 1200px;">
 
-    <!-- 🔐 ACCOUNT -->
-    <div class="card">
-        <h3 class="title">Account Settings</h3>
+    <!-- Settings Sidebar -->
+    <div class="settings-sidebar">
+        <ul style="list-style: none; display: flex; flex-direction: column; gap: 8px;">
+            <li>
+                <a href="#profile" class="settings-nav-item active" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 8px; font-weight: 600; background: var(--primary-transparent); color: var(--primary-color);">
+                    <i data-lucide="user" style="width: 18px; height: 18px;"></i> Profile
+                </a>
+            </li>
+            <li>
+                <a href="#preferences" class="settings-nav-item" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 8px; font-weight: 500; color: var(--text-secondary);">
+                    <i data-lucide="sliders" style="width: 18px; height: 18px;"></i> Preferences
+                </a>
+            </li>
+            <li>
+                <a href="#security" class="settings-nav-item" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 8px; font-weight: 500; color: var(--text-secondary);">
+                    <i data-lucide="lock" style="width: 18px; height: 18px;"></i> Security
+                </a>
+            </li>
+            <li>
+                <a href="#developer" class="settings-nav-item" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 8px; font-weight: 500; color: var(--text-secondary);">
+                    <i data-lucide="terminal" style="width: 18px; height: 18px;"></i> Developer API
+                </a>
+            </li>
+            <li>
+                <a href="#data" class="settings-nav-item" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 8px; font-weight: 500; color: var(--danger);">
+                    <i data-lucide="database" style="width: 18px; height: 18px;"></i> Data Management
+                </a>
+            </li>
+        </ul>
+    </div>
 
-        <form method="POST" autocomplete="off" class="space-y-3">
+    <!-- Settings Content -->
+    <div style="display: flex; flex-direction: column; gap: 32px;">
+
+        <!-- Avatar upload is intentionally its own tiny form: it POSTs a file
+             immediately on selection, independent of the rest of the settings
+             form (so choosing a photo doesn't require also re-entering your
+             password to save unrelated profile fields). -->
+        <form action="/upload_avatar" method="POST" enctype="multipart/form-data" id="avatarForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="file" name="avatar" id="avatarInput" style="display: none;" accept="image/png,image/jpeg,image/webp" onchange="document.getElementById('avatarForm').submit()">
+        </form>
+
+        <!-- Everything below is ONE form: Profile + Preferences + Security all
+             save together in a single POST to /settings, matching what the
+             backend already expects (username/password/old_password/toggles
+             read from one request.form). -->
+        <form method="POST" autocomplete="off">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-            <input type="text" name="username" placeholder="New Username" class="input">
+            <!-- Profile Section -->
+            <div id="profile" class="tilt-card glass p-6 mb-6">
+                <h3 class="text-primary mb-6" style="font-size: 1.25rem;">Account Profile</h3>
 
-            <input type="password" name="old_password" placeholder="Current Password" class="input" required>
+                <div style="display: flex; gap: 24px; align-items: center; margin-bottom: 32px;">
+                    <div id="avatarPreview" style="width: 80px; height: 80px; border-radius: 50%; background: var(--bg-hover); display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; color: var(--primary-color); overflow: hidden; border: 2px solid var(--border-color); flex-shrink: 0;">
+                        {% if current_user.avatar %}
+                            <img src="{{ url_for('static', filename='avatars/' + current_user.avatar) }}" style="width: 100%; height: 100%; object-fit: cover;">
+                        {% else %}
+                            {{ current_user.username[0].upper() }}
+                        {% endif %}
+                    </div>
+                    <div>
+                        <button type="button" class="btn-secondary" style="padding: 8px 16px; font-size: 0.85rem; margin-bottom: 8px;" onclick="document.getElementById('avatarInput').click()">
+                            <i data-lucide="camera" style="width: 14px; height: 14px; margin-right: 4px;"></i> Upload Avatar
+                        </button>
+                        <p class="text-secondary" style="font-size: 0.8rem;">Recommended size: 256x256px (JPG, PNG, WEBP)</p>
+                    </div>
+                </div>
 
-            <!-- PASSWORD -->
-            <div class="relative">
-                <input type="password" id="newPassword" name="password" placeholder="New Password" class="input pr-10">
-                <span onclick="togglePassword()" class="eye">👁</span>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                    <div class="form-group">
+                        <label class="form-label">Username</label>
+                        <input type="text" name="username" class="input-field" value="{{ current_user.username }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" name="email" placeholder="email@company.com" class="input-field" value="{{ current_user.email or '' }}">
+                        <p class="text-secondary" style="font-size: 0.8rem; margin-top: 4px;">Used for password reset links - set this so "Forgot password" works for your account.</p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Role</label>
+                        <input type="text" disabled class="input-field" value="{{ current_user.role|title }}" style="background: rgba(var(--overlay-rgb), 0.06); cursor: not-allowed;">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Timezone</label>
+                        <select class="input-field" data-custom-select disabled style="opacity: 0.5; cursor: not-allowed;">
+                            <option>UTC (Coordinated Universal Time)</option>
+                        </select>
+                    </div>
+                </div>
             </div>
 
-            <!-- 🔥 Strength -->
-            <div id="strengthBar" class="h-1 rounded bg-gray-700"></div>
+            <!-- Preferences Section -->
+            <div id="preferences" class="tilt-card glass p-6 mb-6">
+                <h3 class="text-primary mb-6" style="font-size: 1.25rem;">Global Preferences</h3>
 
-            <!-- TOGGLES -->
-            <div class="flex justify-between items-center">
-                <span>Email Notifications</span>
-                <label class="switch">
-                    <input type="checkbox" name="email_notify"
-                    {% if current_user.email_notify %}checked{% endif %}>
-                    <span class="slider"></span>
-                </label>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--border-color);">
+                    <div>
+                        <p style="font-weight: 500;">Email Notifications</p>
+                        <p class="text-secondary" style="font-size: 0.875rem;">Receive weekly summary reports and critical alerts</p>
+                    </div>
+                    <label style="position: relative; display: inline-block; width: 44px; height: 24px;">
+                        <input type="checkbox" name="email_notify" {% if current_user.email_notify %}checked{% endif %} style="opacity: 0; width: 0; height: 0;">
+                        <span class="toggle-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: {% if current_user.email_notify %}var(--success){% else %}var(--bg-hover){% endif %}; transition: .4s; border-radius: 34px;">
+                            <span style="position: absolute; content: ''; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; transform: {% if current_user.email_notify %}translateX(20px){% else %}translateX(0){% endif %};"></span>
+                        </span>
+                    </label>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0;">
+                    <div>
+                        <p style="font-weight: 500;">AI Auto-Analysis</p>
+                        <p class="text-secondary" style="font-size: 0.875rem;">Automatically run ML sentiment checks on new data uploads</p>
+                    </div>
+                    <label style="position: relative; display: inline-block; width: 44px; height: 24px;">
+                        <input type="checkbox" name="ai_enabled" {% if current_user.ai_enabled %}checked{% endif %} style="opacity: 0; width: 0; height: 0;">
+                        <span class="toggle-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: {% if current_user.ai_enabled %}var(--success){% else %}var(--bg-hover){% endif %}; transition: .4s; border-radius: 34px;">
+                            <span style="position: absolute; content: ''; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; transform: {% if current_user.ai_enabled %}translateX(20px){% else %}translateX(0){% endif %};"></span>
+                        </span>
+                    </label>
+                </div>
             </div>
 
-            <div class="flex justify-between items-center">
-                <span>AI Insights</span>
-                <label class="switch">
-                    <input type="checkbox" name="ai_toggle"
-                    {% if current_user.ai_enabled %}checked{% endif %}>
-                    <span class="slider"></span>
-                </label>
+            <!-- Security Section -->
+            <div id="security" class="tilt-card glass p-6 mb-6">
+                <h3 class="text-primary mb-6" style="font-size: 1.25rem;">Security</h3>
+
+                <div class="form-group">
+                    <label class="form-label">New Password</label>
+                    <div style="position: relative;">
+                        <input type="password" id="newPassword" name="password" placeholder="Leave blank to keep your current password" class="input-field">
+                        <button type="button" onclick="togglePassword()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">
+                            <i id="eyeIcon" data-lucide="eye"></i>
+                        </button>
+                    </div>
+                    <div id="strengthBar" style="height: 4px; border-radius: 2px; background-color: var(--border-color); margin-top: 8px; transition: background-color 0.3s;"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Current Password</label>
+                    <input type="password" name="old_password" placeholder="Only required if changing username or password" class="input-field">
+                    <p class="text-secondary" style="font-size: 0.8rem; margin-top: 4px;">Needed to confirm a username or password change - not required for preference toggles.</p>
+                </div>
             </div>
 
-            <button class="btn-primary">
-                Update Settings
-            </button>
+            <button type="submit" class="btn-primary">Save Changes</button>
         </form>
-    </div>
 
-    <!-- 📊 HEALTH SCORE -->
-    <div class="card text-center">
-        <h3 class="title">AI Health Score</h3>
+        <!-- Developer API -->
+        <div id="developer" class="tilt-card glass p-6">
+            <h3 class="text-primary mb-6" style="font-size: 1.25rem;">Developer API</h3>
+            <p class="text-secondary mb-4" style="line-height: 1.6;">Use this API key to authenticate requests from your external applications. Do not share this key with anyone.</p>
+            
+            <div style="display: flex; gap: 12px; align-items: center; background: rgba(var(--overlay-rgb), 0.06); padding: 16px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 24px;">
+                <code style="flex: 1; color: var(--success); font-family: monospace; font-size: 1rem;">pcx_live_xxxxxxxxxxxxxxxxxxxxxx</code>
+                <button class="btn-secondary" style="padding: 8px 16px; font-size: 0.85rem;" onclick="alert('API Key Copied!')">Copy Key</button>
+            </div>
+            
+            <button class="btn-secondary text-danger" style="border-color: rgba(255, 77, 77, 0.3);">Roll API Key</button>
+        </div>
 
-        <p class="text-4xl font-bold text-green-400 mt-4">
-            {{ ai_score }}%
-        </p>
+        <!-- Data Management Section -->
+        <div id="data" class="tilt-card glass p-6" style="border-color: rgba(255, 77, 77, 0.3);">
+            <h3 class="text-danger mb-6" style="font-size: 1.25rem;">Danger Zone</h3>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--border-color);">
+                <div>
+                    <p style="font-weight: 500;">Export Customer Data</p>
+                    <p class="text-secondary" style="font-size: 0.875rem;">Download all your records in CSV format</p>
+                </div>
+                <a href="/export_csv" class="btn-secondary" style="padding: 8px 16px;">Export CSV</a>
+            </div>
 
-        <p class="text-gray-400 text-sm mt-2">
-            Overall customer satisfaction
-        </p>
-    </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0;">
+                <div>
+                    <p style="font-weight: 500; color: var(--danger);">Delete Account</p>
+                    <p class="text-secondary" style="font-size: 0.875rem;">Permanently remove your account and all data</p>
+                </div>
+                <form method="POST" action="/delete_account" onsubmit="return confirm('Are you absolutely sure you want to delete your account? This cannot be undone.')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn-primary" style="background-color: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: var(--danger);">
+                        Delete Account
+                    </button>
+                </form>
+            </div>
+        </div>
 
-    <!-- 🌙 APPEARANCE -->
-    <div class="card">
-        <h3 class="title">Appearance</h3>
-
-        <button onclick="toggleDark()" class="btn-secondary">
-            🌙 Toggle Dark Mode
-        </button>
-    </div>
-
-    <!-- 📊 DATA -->
-    <div class="card">
-        <h3 class="title">Data & Reports</h3>
-
-        <a href="/download_report"><button class="btn-green">Download AI Report</button></a>
-        <a href="/export_csv"><button class="btn-blue">Export CSV</button></a>
-
-        <form method="POST" action="/clear_data" onsubmit="return confirm('Clear all data?')">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button class="btn-yellow">Clear Data</button>
-        </form>
     </div>
 
 </div>
 
-<!-- 🔴 DELETE -->
-<div class="mt-6 max-w-6xl">
-    <div class="card border-red-500/30">
-        <h3 class="text-red-400 font-semibold mb-4">Danger Zone ⚠️</h3>
-
-        <form method="POST" action="/delete_account"
-        onsubmit="return confirm('Delete account permanently?')">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-            <button class="btn-danger">Delete Account</button>
-        </form>
-    </div>
-</div>
-
-<!-- 🔥 STYLES -->
 <style>
-.card{
-    padding:20px;
-    background:rgba(255,255,255,0.05);
-    backdrop-filter:blur(12px);
-    border-radius:12px;
-    border:1px solid rgba(255,255,255,0.1);
-    transition:0.3s;
-}
-.card:hover{
-    transform:translateY(-3px);
-    box-shadow:0 10px 25px rgba(0,0,0,0.4);
-}
-
-.title{
-    color:#818cf8;
-    font-weight:600;
-    margin-bottom:10px;
-}
-
-.input{
-    width:100%;
-    padding:10px;
-    border-radius:8px;
-    background:#1f2937;
-    border:1px solid #374151;
-}
-
-.eye{
-    position:absolute;
-    right:10px;
-    top:10px;
-    cursor:pointer;
-}
-
-/* BUTTONS */
-.btn-primary{background:linear-gradient(to right,#6366f1,#9333ea);padding:10px;border-radius:8px;width:100%;}
-.btn-green{background:#16a34a;padding:10px;border-radius:8px;width:100%;margin-bottom:10px;}
-.btn-blue{background:#2563eb;padding:10px;border-radius:8px;width:100%;margin-bottom:10px;}
-.btn-yellow{background:#eab308;padding:10px;border-radius:8px;width:100%;}
-.btn-danger{background:#ef4444;padding:10px;border-radius:8px;width:100%;}
-.btn-secondary{background:#374151;padding:10px;border-radius:8px;width:100%;}
-
-/* SWITCH */
-.switch{
-    position:relative;
-    width:40px;
-    height:20px;
-}
-.switch input{display:none;}
-.slider{
-    position:absolute;
-    background:#555;
-    border-radius:20px;
-    width:100%;
-    height:100%;
-}
-.slider:before{
-    content:"";
-    position:absolute;
-    height:16px;
-    width:16px;
-    left:2px;
-    bottom:2px;
-    background:white;
-    border-radius:50%;
-    transition:.3s;
-}
-input:checked + .slider{
-    background:#22c55e;
-}
-input:checked + .slider:before{
-    transform:translateX(20px);
-}
+    @media (max-width: 860px) {
+        #settingsLayout { grid-template-columns: 1fr !important; }
+        .settings-sidebar { position: static; }
+    }
 </style>
 
-<!-- 🔥 JS -->
 <script>
-function togglePassword(){
-    const p=document.getElementById("newPassword");
-    p.type=p.type==="password"?"text":"password";
-}
+    document.addEventListener('DOMContentLoaded', function () { lucide.createIcons(); });
 
-/* PASSWORD STRENGTH */
-document.getElementById("newPassword").addEventListener("input",function(){
-    let val=this.value;
-    let strength=val.length;
-    let bar=document.getElementById("strengthBar");
+    // Toggle nav active state
+    document.querySelectorAll('.settings-nav-item').forEach(item => {
+        item.addEventListener('click', function() {
+            document.querySelectorAll('.settings-nav-item').forEach(nav => {
+                nav.style.background = 'transparent';
+                nav.style.color = 'var(--text-secondary)';
+                nav.style.fontWeight = '500';
+            });
+            this.style.background = 'var(--primary-transparent)';
+            this.style.color = 'var(--primary-color)';
+            this.style.fontWeight = '600';
+        });
+    });
 
-    if(strength<6){bar.style.background="red";}
-    else if(strength<10){bar.style.background="orange";}
-    else{bar.style.background="green";}
-});
+    function togglePassword() {
+        const pwd = document.getElementById("newPassword");
+        const icon = document.getElementById("eyeIcon");
+        if (pwd.type === "password") {
+            pwd.type = "text";
+            icon.setAttribute("data-lucide", "eye-off");
+        } else {
+            pwd.type = "password";
+            icon.setAttribute("data-lucide", "eye");
+        }
+        lucide.createIcons();
+    }
+
+    const newPasswordEl = document.getElementById("newPassword");
+    if (newPasswordEl) {
+        newPasswordEl.addEventListener("input", function() {
+            let val = this.value;
+            let strength = val.length;
+            let bar = document.getElementById("strengthBar");
+
+            if(strength === 0) { bar.style.backgroundColor = "var(--border-color)"; }
+            else if(strength < 6) { bar.style.backgroundColor = "var(--danger)"; }
+            else if(strength < 10) { bar.style.backgroundColor = "var(--warning)"; }
+            else { bar.style.backgroundColor = "var(--success)"; }
+        });
+    }
+
+    // Custom toggle UI functionality
+    document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const slider = this.nextElementSibling;
+            const thumb = slider.querySelector('span');
+            if(this.checked) {
+                slider.style.backgroundColor = 'var(--success)';
+                thumb.style.transform = 'translateX(20px)';
+            } else {
+                slider.style.backgroundColor = 'var(--bg-hover)';
+                thumb.style.transform = 'translateX(0)';
+            }
+        });
+    });
 </script>
 
 {% endblock %}

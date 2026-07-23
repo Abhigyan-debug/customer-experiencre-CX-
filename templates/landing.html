@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Apply the saved theme before first paint -->
+    <script>
+    (function () {
+        try {
+            var t = localStorage.getItem('pulsecx-theme');
+            document.documentElement.dataset.theme = (t === 'light') ? 'light' : 'dark';
+        } catch (e) {
+            document.documentElement.dataset.theme = 'dark';
+        }
+    })();
+    </script>
+
+    <title>PulseCX - Push your insights to the edge</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Icons -->
+    <script src="{{ url_for('static', filename='vendor/lucide.min.js') }}" defer></script>
+
+    <script src="{{ url_for('static', filename='js/theme.js') }}" defer></script>
+
+    <!-- Three.js - hero AI core only, scoped to this page (not loaded on
+         any authenticated app page). Self-hosted + deferred (see base.html
+         for why); the hero scene script below waits for DOMContentLoaded. -->
+    <script src="{{ url_for('static', filename='vendor/three.min.js') }}" defer></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            background-color: var(--bg-main);
+            overflow-x: hidden;
+        }
+
+        /* Navbar */
+        .landing-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 5%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 100;
+        }
+
+        .nav-logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-primary);
+        }
+        .nav-logo i { color: var(--primary-color); }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .nav-links a { color: var(--text-primary); transition: color 0.2s; }
+        .nav-links a:hover { color: var(--primary-color); }
+        .nav-links .dropdown { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+
+        .nav-auth {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        /* Hero Section */
+        .hero-section {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 180px 5% 100px;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .hero-content {
+            flex: 1;
+            max-width: 600px;
+            z-index: 10;
+        }
+
+        .hero-title {
+            font-size: 4.5rem;
+            font-weight: 800;
+            line-height: 1.05;
+            margin-bottom: 24px;
+            letter-spacing: -0.04em;
+        }
+
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            margin-bottom: 48px;
+            line-height: 1.6;
+            max-width: 500px;
+        }
+
+        .hero-image-container {
+            flex: 1;
+            display: flex;
+            justify-content: flex-end;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Holographic AI core canvas mount */
+        .abstract-graphic {
+            position: relative;
+            width: 600px;
+            height: 500px;
+            max-width: 100%;
+        }
+
+        .abstract-graphic canvas {
+            position: absolute;
+            inset: 0;
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        @media (max-width: 900px) {
+            .abstract-graphic { width: 100%; height: 360px; }
+        }
+
+        /* Background grid/dots */
+        .bg-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(rgba(var(--overlay-rgb), 0.15) 1px, transparent 1px);
+            background-size: 30px 30px;
+            opacity: 0.5;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="bg-pattern"></div>
+
+    <nav class="landing-nav" style="border-bottom: 1px solid var(--border-color); background: var(--bg-sidebar); backdrop-filter: blur(10px);">
+        <div class="nav-logo" style="font-weight: 800; font-size: 1.4rem;">
+            <i data-lucide="shield-check" style="color: var(--primary-color);"></i> Pulse<span style="color: var(--primary-color);">CX</span>
+        </div>
+
+        <div class="nav-links">
+            <a href="#features" style="color: var(--text-secondary); font-weight: 500;">Solutions</a>
+            <a href="#how-it-works" style="color: var(--text-secondary); font-weight: 500;">Technology</a>
+            <a href="#about" style="color: var(--text-secondary); font-weight: 500;">About</a>
+        </div>
+
+        <div class="nav-auth">
+            <button type="button" data-theme-toggle aria-label="Switch to light mode"
+                style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--bg-hover); border: 1px solid var(--border-color); color: var(--text-primary); cursor: pointer; transition: all 0.2s ease;">
+                <i data-lucide="moon" style="width: 18px; height: 18px;"></i>
+            </button>
+            <a href="/login" style="margin-right: 24px; font-weight: 600; color: var(--text-primary);">Log in</a>
+            <a href="/register" class="btn-primary" style="box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);">Get Started</a>
+        </div>
+    </nav>
+
+    <div class="hero-section" style="background: var(--body-gradient); padding: 120px 20px; color: var(--text-primary);">
+        <div class="hero-content" style="max-width: 900px; margin: 0 auto; text-align: center;">
+            <h1 class="hero-title" style="font-size: 3.5rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 24px; line-height: 1.1;">Turn Customer Voice into <br> <span style="color: var(--primary-color);">Predictive Intelligence</span></h1>
+            <p class="hero-subtitle" style="margin-bottom: 48px; font-size: 1.2rem; max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.6;">The enterprise-grade sentiment analysis platform. Extract deep emotional insights and actionable intelligence from every interaction.</p>
+
+            <div style="display: flex; gap: 20px; justify-content: center;">
+                <a href="/register" class="btn-primary" style="font-size: 1.1rem; padding: 16px 36px; border-radius: 12px;">Start Free Trial</a>
+                <a href="#features" class="btn-secondary" style="padding: 16px 36px; border: 1px solid var(--border-color); color: var(--text-primary); font-weight: 600; border-radius: 12px; background: var(--bg-hover);">Request Demo</a>
+            </div>
+        </div>
+
+        <div class="hero-image-container">
+            <!-- Holographic AI core: floating icosahedron sphere, orbiting
+                 rings, ambient particles. See the script block near the end
+                 of this file - falls back to a static glow on
+                 prefers-reduced-motion or if WebGL is unavailable. -->
+            <div class="abstract-graphic" id="hero-canvas">
+                <noscript>
+                    <div class="ai-glow" style="position: absolute; inset: 0;"></div>
+                </noscript>
+            </div>
+        </div>
+    </div>
+
+    <!-- FEATURES SECTION -->
+    <section id="features" style="padding: 100px 5%; background-color: var(--bg-alt);">
+        <div style="text-align: center; margin-bottom: 80px;">
+            <h2 style="font-size: 3rem; font-weight: 800; margin-bottom: 16px;">Everything you need to scale</h2>
+            <p style="color: var(--text-secondary); font-size: 1.1rem; max-width: 600px; margin: 0 auto;">PulseCX provides a complete suite of tools to analyze, track, and act on customer feedback seamlessly.</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 32px; max-width: 1200px; margin: 0 auto;">
+            <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 40px; border-radius: 16px; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='none'">
+                <div style="background: rgba(0, 212, 182, 0.1); width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
+                    <i data-lucide="zap" style="color: var(--primary-color); width: 32px; height: 32px;"></i>
+                </div>
+                <h3 style="font-size: 1.5rem; margin-bottom: 16px;">Real-time Sentiment</h3>
+                <p style="color: var(--text-secondary); line-height: 1.6;">Our ML models analyze text instantly, categorizing feedback as Positive, Negative, or Neutral with pinpoint accuracy.</p>
+            </div>
+
+            <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 40px; border-radius: 16px; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='none'">
+                <div style="background: rgba(59, 130, 246, 0.1); width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
+                    <i data-lucide="brain-circuit" style="color: #3b82f6; width: 32px; height: 32px;"></i>
+                </div>
+                <h3 style="font-size: 1.5rem; margin-bottom: 16px;">AI Insights Engine</h3>
+                <p style="color: var(--text-secondary); line-height: 1.6;">Don't just look at data. PulseCX automatically summarizes issues and suggests actionable steps to improve customer experience.</p>
+            </div>
+
+            <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 40px; border-radius: 16px; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='none'">
+                <div style="background: rgba(0, 208, 132, 0.1); width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
+                    <i data-lucide="bar-chart" style="color: var(--secondary-color); width: 32px; height: 32px;"></i>
+                </div>
+                <h3 style="font-size: 1.5rem; margin-bottom: 16px;">Enterprise Dashboards</h3>
+                <p style="color: var(--text-secondary); line-height: 1.6;">Visualize trends, monitor AI health scores, and track your performance over time with beautifully crafted analytics.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- HOW IT WORKS SECTION -->
+    <section id="how-it-works" style="padding: 100px 5%; background-color: var(--bg-main);">
+        <div style="text-align: center; margin-bottom: 80px;">
+            <h2 style="font-size: 3rem; font-weight: 800; margin-bottom: 16px;">How it works</h2>
+            <p style="color: var(--text-secondary); font-size: 1.1rem; max-width: 600px; margin: 0 auto;">Three simple steps to unlock the hidden value in your customer data.</p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 40px; max-width: 800px; margin: 0 auto; position: relative;">
+            <div style="position: absolute; left: 30px; top: 0; bottom: 0; width: 2px; background: var(--border-color); z-index: 0;"></div>
+            
+            <div style="display: flex; gap: 40px; align-items: flex-start; position: relative; z-index: 1;">
+                <div style="width: 60px; height: 60px; border-radius: 50%; background: var(--primary-color); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; color: #000; flex-shrink: 0;">1</div>
+                <div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 12px;">Ingest Data</h3>
+                    <p style="color: var(--text-secondary); line-height: 1.6;">Upload CSVs of customer reviews, or enter feedback manually. PulseCX securely stores and prepares your data for analysis.</p>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 40px; align-items: flex-start; position: relative; z-index: 1;">
+                <div style="width: 60px; height: 60px; border-radius: 50%; background: var(--bg-card); border: 2px solid var(--primary-color); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; color: var(--primary-color); flex-shrink: 0;">2</div>
+                <div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 12px;">AI Processing</h3>
+                    <p style="color: var(--text-secondary); line-height: 1.6;">Our pipeline automatically evaluates sentiment, extracts key emotions, and calculates overall customer health scores.</p>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 40px; align-items: flex-start; position: relative; z-index: 1;">
+                <div style="width: 60px; height: 60px; border-radius: 50%; background: var(--bg-card); border: 2px solid var(--primary-color); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; color: var(--primary-color); flex-shrink: 0;">3</div>
+                <div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 12px;">Act on Insights</h3>
+                    <p style="color: var(--text-secondary); line-height: 1.6;">Review the generated AI action plans and dashboard metrics to make data-driven decisions that improve your product.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ABOUT US SECTION -->
+    <section id="about" style="padding: 100px 5%; background-color: var(--bg-alt); text-align: center;">
+        <h2 style="font-size: 3rem; font-weight: 800; margin-bottom: 16px;">Built by Engineers</h2>
+        <p style="color: var(--text-secondary); font-size: 1.1rem; max-width: 600px; margin: 0 auto 60px;">We believe in building fast, scalable, and beautiful tools that solve real problems.</p>
+        
+        <div style="display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;">
+            <div style="text-align: center;">
+                <img src="https://api.dicebear.com/7.x/initials/svg?seed=Abhigyan&backgroundColor=00d4b6" alt="Abhigyan" style="width: 100px; height: 100px; border-radius: 50%; margin-bottom: 16px; border: 4px solid var(--bg-card);">
+                <h4 style="font-size: 1.2rem;">Abhigyan Khare</h4>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">Full Stack Developer</p>
+            </div>
+            <div style="text-align: center;">
+                <img src="https://api.dicebear.com/7.x/initials/svg?seed=Oshiva&backgroundColor=00d4b6" alt="Oshiva" style="width: 100px; height: 100px; border-radius: 50%; margin-bottom: 16px; border: 4px solid var(--bg-card);">
+                <h4 style="font-size: 1.2rem;">Oshiva Singh</h4>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">UI/UX Designer</p>
+            </div>
+            <div style="text-align: center;">
+                <img src="https://api.dicebear.com/7.x/initials/svg?seed=Ashish&backgroundColor=00d4b6" alt="Ashish" style="width: 100px; height: 100px; border-radius: 50%; margin-bottom: 16px; border: 4px solid var(--bg-card);">
+                <h4 style="font-size: 1.2rem;">Ashish Agarwal</h4>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">Backend Developer</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer style="padding: 40px 5%; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; color: var(--text-secondary); font-size: 0.9rem;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="bar-chart-2" style="color: var(--primary-color); width: 20px; height: 20px;"></i>
+            <span style="font-weight: 600; color: var(--text-primary);">PulseCX</span>
+        </div>
+        <p>&copy; 2026 PulseCX Analytics. All rights reserved.</p>
+    </footer>
+
+    <!-- Holographic AI core hero scene. Follows the same perf hygiene as the
+         app-wide background in base.html (capped pixel ratio, pauses when
+         hidden, respects reduced-motion) but scoped only to this page, with
+         a tighter object budget since it's a focal hero, not an ambient
+         backdrop. -->
+    <script>
+    // three.js is deferred (see <head>) - wait for DOMContentLoaded so THREE
+    // is guaranteed to exist before this runs.
+    document.addEventListener('DOMContentLoaded', function () {
+    (function () {
+        const container = document.getElementById('hero-canvas');
+        if (!container) return;
+
+        const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (reduceMotion || typeof THREE === 'undefined') {
+            container.style.background = 'radial-gradient(circle at center, rgba(0,153,255,0.25), transparent 70%)';
+            return;
+        }
+
+        function primaryColorHex() {
+            const v = getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim();
+            return new THREE.Color(v || '#0099FF').getHex();
+        }
+        function secondaryColorHex() {
+            const v = getComputedStyle(document.documentElement).getPropertyValue('--secondary-color').trim();
+            return new THREE.Color(v || '#00D084').getHex();
+        }
+
+        const width = container.clientWidth || 600;
+        const height = container.clientHeight || 500;
+
+        const scene = new THREE.Scene();
+
+        const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100);
+        camera.position.set(0, 0, 7);
+
+        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'low-power' });
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+        container.appendChild(renderer.domElement);
+
+        // Holographic core: a faceted wireframe icosahedron plus a slightly
+        // larger additive-blended inner shell for the "glow" - both unlit
+        // MeshBasicMaterials, no real-time lights, to keep this roughly as
+        // cheap as the app-wide particle background.
+        const coreGeometry = new THREE.IcosahedronGeometry(1.6, 2);
+        const coreMaterial = new THREE.MeshBasicMaterial({
+            color: primaryColorHex(),
+            wireframe: true,
+            transparent: true,
+            opacity: 0.55
+        });
+        const core = new THREE.Mesh(coreGeometry, coreMaterial);
+        scene.add(core);
+
+        const glowGeometry = new THREE.IcosahedronGeometry(1.75, 1);
+        const glowMaterial = new THREE.MeshBasicMaterial({
+            color: secondaryColorHex(),
+            wireframe: true,
+            transparent: true,
+            opacity: 0.2,
+            blending: THREE.AdditiveBlending
+        });
+        const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+        scene.add(glow);
+
+        // Orbiting rings, tilted at different fixed angles so they read as
+        // layered orbits, each rotating at its own speed.
+        const ringDefs = [
+            { radius: 2.3, tube: 0.012, tiltX: 1.1, tiltZ: 0.3, speed: 0.18, color: primaryColorHex() },
+            { radius: 2.7, tube: 0.01, tiltX: -0.6, tiltZ: 0.9, speed: -0.13, color: secondaryColorHex() },
+            { radius: 3.1, tube: 0.008, tiltX: 0.3, tiltZ: -0.7, speed: 0.09, color: primaryColorHex() }
+        ];
+        const rings = ringDefs.map((def) => {
+            const geo = new THREE.TorusGeometry(def.radius, def.tube, 8, 96);
+            const mat = new THREE.MeshBasicMaterial({ color: def.color, transparent: true, opacity: 0.35 });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.rotation.x = def.tiltX;
+            mesh.rotation.z = def.tiltZ;
+            scene.add(mesh);
+            return { mesh, speed: def.speed };
+        });
+
+        // Ambient particles - same additive-blended point-cloud approach as
+        // the app background, but a much tighter spread and lower count
+        // since this shares frame budget with the core + rings.
+        const particleCount = 180;
+        const positions = new Float32Array(particleCount * 3);
+        for (let i = 0; i < particleCount * 3; i++) {
+            positions[i] = (Math.random() - 0.5) * 9;
+        }
+        const particleGeometry = new THREE.BufferGeometry();
+        particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const particleMaterial = new THREE.PointsMaterial({
+            size: 0.035,
+            color: primaryColorHex(),
+            transparent: true,
+            opacity: 0.7,
+            blending: THREE.AdditiveBlending
+        });
+        const particles = new THREE.Points(particleGeometry, particleMaterial);
+        scene.add(particles);
+
+        // Mouse parallax, scoped to this container only (not the whole
+        // document) so it doesn't fight with page scroll/other interactions.
+        let mouseX = 0;
+        let mouseY = 0;
+        container.addEventListener('mousemove', (event) => {
+            const rect = container.getBoundingClientRect();
+            mouseX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouseY = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        });
+
+        const clock = new THREE.Clock();
+        let rafId = null;
+
+        // Cap at 60fps - same reasoning as the app-wide background: no
+        // visible benefit to rendering faster than that, just wasted GPU
+        // on high-refresh-rate displays.
+        const FRAME_INTERVAL = 1000 / 60;
+        let lastFrameTime = 0;
+
+        function animate(now) {
+            rafId = requestAnimationFrame(animate);
+            if (now - lastFrameTime < FRAME_INTERVAL) return;
+            lastFrameTime = now;
+
+            const t = clock.getElapsedTime();
+
+            core.rotation.y = t * 0.15;
+            core.rotation.x = t * 0.08;
+            glow.rotation.y = -t * 0.1;
+            glow.rotation.x = t * 0.05;
+
+            rings.forEach((r) => { r.mesh.rotation.z += r.speed * 0.01; });
+
+            particles.rotation.y = t * 0.03;
+
+            camera.position.x += (mouseX * 1.6 - camera.position.x) * 0.04;
+            camera.position.y += (mouseY * 1.6 - camera.position.y) * 0.04;
+            camera.lookAt(scene.position);
+
+            renderer.render(scene, camera);
+        }
+        animate(performance.now());
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
+            } else if (rafId === null) {
+                animate(performance.now());
+            }
+        });
+
+        let resizeTimer = null;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                const w = container.clientWidth || width;
+                const h = container.clientHeight || height;
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+                renderer.setSize(w, h);
+            }, 150);
+        });
+
+        // Follow the light/dark toggle by recoloring in place instead of
+        // rebuilding the scene.
+        document.addEventListener('theme-changed', () => {
+            const primary = primaryColorHex();
+            const secondary = secondaryColorHex();
+            coreMaterial.color.setHex(primary);
+            glowMaterial.color.setHex(secondary);
+            particleMaterial.color.setHex(primary);
+            rings.forEach((r, i) => {
+                r.mesh.material.color.setHex(i % 2 === 0 ? primary : secondary);
+            });
+        });
+    })();
+    });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () { lucide.createIcons(); });
+    </script>
+</body>
+</html>

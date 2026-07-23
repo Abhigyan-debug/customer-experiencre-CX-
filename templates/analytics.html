@@ -1,187 +1,253 @@
 {% extends "base.html" %}
+{% import "_macros.html" as macros %}
 {% block content %}
 
-<h2 class="text-4xl font-bold mb-8 text-cyan-400">Analytics</h2>
-
-<div class="grid grid-cols-4 gap-6 mb-8">
-
-    <div class="p-5 rounded-xl bg-white/5 border border-white/10 hover:scale-105 hover:shadow-cyan-500/30 transition shadow-lg text-center">
-        <p class="text-gray-400">Total</p>
-        <h2 class="text-3xl font-bold text-white">{{ total }}</h2>
-    </div>
-
-    <div class="p-5 rounded-xl bg-green-500/10 border border-green-400/20 hover:scale-105 hover:shadow-cyan-500/30 transition shadow-lg text-center">
-        <p class="text-gray-400">Positive</p>
-        <h2 class="text-3xl font-bold text-green-400">{{ positive }}</h2>
-    </div>
-
-    <div class="p-5 rounded-xl bg-red-500/10 border border-red-400/20 hover:scale-105 hover:shadow-cyan-500/30 transition shadow-lg text-center">
-        <p class="text-gray-400">Negative</p>
-        <h2 class="text-3xl font-bold text-red-400">{{ negative }}</h2>
-    </div>
-
-    <div class="p-5 rounded-xl bg-cyan-500/10 border border-cyan-400/20 hover:scale-105 hover:shadow-cyan-500/30 transition shadow-lg text-center">
-        <p class="text-gray-400">CX Score</p>
-        <h2 class="text-3xl font-bold text-cyan-400">{{ score }}%</h2>
-    </div>
-
+<div class="dashboard-header mb-6">
+    <h1 class="page-title">Analytics</h1>
+    <p class="page-subtitle">Deep dive into your customer experience metrics</p>
 </div>
 
-<div class="grid grid-cols-2 gap-6">
+<!-- Stats Grid -->
+<div class="stats-grid">
+    {{ macros.kpi_card("Total Records", value=total, id="stat-total", color="text-white", glow="from-white/10 to-transparent", icon="database") }}
+    {{ macros.kpi_card("Positive", value=positive, id="stat-positive", color="text-secondary", glow="from-secondary/20 to-transparent", icon="thumbs-up") }}
+    {{ macros.kpi_card("Negative", value=negative, id="stat-negative", color="text-red-400", glow="from-red-500/20 to-transparent", icon="thumbs-down") }}
+    {{ macros.kpi_card("CX Score", value=score, suffix="%", id="stat-score", color="text-primary", glow="from-primary/20 to-transparent", icon="percent") }}
+</div>
 
-    <div class="p-6 rounded-2xl bg-white/5 border border-white/10 shadow-xl hover:shadow-cyan-500/30 hover:scale-[1.02] transition duration-300">
-        <h3 class="text-lg font-semibold text-white mb-4">Sentiment Overview</h3>
-        <div class="flex justify-center items-center h-[240px]">
-            <canvas id="donutChart" class="w-44 h-44"></canvas>
+<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 24px;">
+
+    <!-- Sentiment Overview -->
+    <div class="tilt-card glass p-6">
+        <h3 class="text-primary mb-4" style="font-size: 1.125rem;">Sentiment Overview</h3>
+        <div style="display: flex; justify-content: center; align-items: center; height: 240px;">
+            <div style="width: 200px; height: 200px;">
+                <canvas id="donutChart"></canvas>
+            </div>
         </div>
     </div>
 
-    <div class="p-6 rounded-2xl bg-white/5 border border-white/10 shadow-xl hover:shadow-cyan-500/30 hover:scale-[1.02] transition duration-300">
-        <h3 class="text-lg font-semibold text-white mb-4">Comparison</h3>
-        <div class="flex justify-center items-center h-[240px]">
-            <canvas id="barChart" class="w-48 h-48"></canvas>
+    <!-- Comparison -->
+    <div class="tilt-card glass p-6">
+        <h3 class="text-primary mb-4" style="font-size: 1.125rem;">Sentiment Comparison</h3>
+        <div style="display: flex; justify-content: center; align-items: center; height: 240px;">
+            <canvas id="barChart"></canvas>
         </div>
     </div>
 
-    <div class="p-6 rounded-2xl bg-white/5 border border-white/10 shadow-xl hover:shadow-cyan-500/30 hover:scale-[1.02] transition duration-300">
-        <h3 class="text-lg font-semibold text-white mb-4">Emotion Insights</h3>
-        <div class="flex justify-center items-center h-[240px]">
-            <canvas id="emotionChart" class="w-44 h-44"></canvas>
+    <!-- Emotion Insights -->
+    <div class="tilt-card glass p-6">
+        <h3 class="text-primary mb-4" style="font-size: 1.125rem;">Emotion Breakdown</h3>
+        <div style="display: flex; justify-content: center; align-items: center; height: 240px;">
+            <div style="width: 200px; height: 200px;">
+                <canvas id="emotionChart"></canvas>
+            </div>
         </div>
     </div>
 
-    <div class="p-6 rounded-2xl bg-white/5 border border-white/10 shadow-xl hover:shadow-cyan-500/30 hover:scale-[1.02] transition duration-300">
-        
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-semibold text-white">Sentiment Trend</h3>
-
-            <select id="filter" class="bg-black/40 border border-gray-700 px-3 py-1 rounded text-sm text-white">
+    <!-- Sentiment Trend -->
+    <div class="tilt-card glass p-6">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 class="text-primary" style="font-size: 1.125rem; margin: 0;">Sentiment Trend</h3>
+            <select id="filter" data-custom-select data-custom-select-compact class="input-field" style="width: auto; padding: 6px 12px;">
                 <option value="10">Last 10</option>
                 <option value="5">Last 5</option>
                 <option value="all">All</option>
             </select>
         </div>
-
-        <div class="h-[240px]">
+        <div style="height: 240px;">
             <canvas id="trendChart"></canvas>
         </div>
-
     </div>
 
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script>
+// Chart.js is self-hosted + deferred (see base.html), so everything here
+// that touches Chart/the DOM waits for DOMContentLoaded - deferred scripts
+// are guaranteed to have run by the time that event fires.
+document.addEventListener('DOMContentLoaded', function () {
 
-const positive = {{ positive|default(0) }};
-const negative = {{ negative|default(0) }};
-const neutral = {{ neutral|default(0) }};
-const trendData = {{ trend|tojson }};
-const emotions = {{ emotions|tojson }};
+let positive = {{ positive|default(0) }};
+let negative = {{ negative|default(0) }};
+let neutral = {{ neutral|default(0) }};
+let trendData = {{ trend|tojson }};
+let emotions = {{ emotions|tojson }};
 
-new Chart(document.getElementById("donutChart"), {
+// Chart Default Settings
+Chart.defaults.color = window.pulsecxChartTextColor ? window.pulsecxChartTextColor() : '#8B9BB4';
+Chart.defaults.font.family = "'Inter', system-ui, -apple-system, sans-serif";
+
+// Donut Chart
+const donutChart = new Chart(document.getElementById("donutChart"), {
     type: "doughnut",
     data: {
         labels: ["Positive","Negative","Neutral"],
         datasets: [{
             data: [positive, negative, neutral],
-            backgroundColor: ["#22c55e","#ef4444","#eab308"],
-            hoverOffset: 15
+            // Brand palette (--success/--danger/--warning), matching the PDF
+            // export chart and every other sentiment-colored chart in the app.
+            backgroundColor: ["#00D084","#ef4444","#f59e0b"],
+            borderWidth: 0,
+            hoverOffset: 4
         }]
     },
     options: {
-        cutout: "70%",
-        plugins: { legend: { position: "bottom", labels:{color:"white"} }},
-        animation: { duration: 1200 }
+        cutout: "75%",
+        plugins: {
+            legend: { position: "bottom" }
+        },
+        maintainAspectRatio: false
     }
 });
 
-const ctx = document.getElementById("barChart").getContext("2d");
+// Bar Chart
+const ctxBar = document.getElementById("barChart").getContext("2d");
+const g1 = ctxBar.createLinearGradient(0,0,0,240);
+g1.addColorStop(0,"#00D084");
+g1.addColorStop(1,"#00A868");
 
-const g1 = ctx.createLinearGradient(0,0,0,200);
-g1.addColorStop(0,"#22c55e");
-g1.addColorStop(1,"#16a34a");
-
-const g2 = ctx.createLinearGradient(0,0,0,200);
+const g2 = ctxBar.createLinearGradient(0,0,0,240);
 g2.addColorStop(0,"#ef4444");
 g2.addColorStop(1,"#b91c1c");
 
-new Chart(ctx, {
+const barChart = new Chart(ctxBar, {
     type: "bar",
     data: {
         labels: ["Positive","Negative","Neutral"],
         datasets: [{
             data: [positive, negative, neutral],
-            backgroundColor: [g1,g2,"#eab308"],
-            borderRadius: 14,
-            barThickness: 30
+            backgroundColor: [g1, g2, "#f59e0b"],
+            borderRadius: 6,
+            barThickness: 40
         }]
     },
     options: {
         plugins: { legend: { display: false }},
         scales: {
-            x: { ticks:{color:"white"} },
-            y: { ticks:{color:"white"}, beginAtZero:true }
+            x: { grid: { display: false } },
+            y: { grid: { color: '#27272a' }, beginAtZero: true }
         },
-        animation: { duration: 1200 }
+        maintainAspectRatio: false
     }
 });
 
-new Chart(document.getElementById("emotionChart"), {
+// Emotion Chart
+const emotionChart = new Chart(document.getElementById("emotionChart"), {
     type: "doughnut",
     data: {
         labels: Object.keys(emotions),
         datasets: [{
             data: Object.values(emotions),
-            backgroundColor: ["#38bdf8","#f472b6","#34d399","#facc15","#fb7185"],
-            hoverOffset: 12
+            backgroundColor: ["#0099FF","#00D084","#22c55e","#f59e0b","#f43f5e"],
+            borderWidth: 0,
+            hoverOffset: 4
         }]
     },
     options: {
-        cutout: "70%",
-        plugins: { legend: { position: "bottom", labels:{color:"white"} }},
-        animation: { duration: 1200 }
+        cutout: "75%",
+        plugins: { legend: { position: "bottom" }},
+        maintainAspectRatio: false
     }
 });
 
-let chart;
+// Trend Chart - updates the existing instance in place instead of
+// destroy()+recreate on every call (filter change AND every 30s poll used
+// to tear down and rebuild the whole chart from scratch, which is both
+// wasteful and causes a visible flash). Chart.js handles data/label length
+// changes fine via .update(), no need to recreate the chart for that.
+let trendChartInstance;
+function drawTrendChart(data, animate){
+    if (animate === undefined) animate = true;
 
-function draw(data){
-    if(chart) chart.destroy();
+    if (trendChartInstance) {
+        trendChartInstance.data.labels = data.map((_,i)=>i+1);
+        trendChartInstance.data.datasets[0].data = data;
+        trendChartInstance.update(animate ? undefined : 'none');
+        return;
+    }
 
-    chart = new Chart(document.getElementById("trendChart"), {
+    trendChartInstance = new Chart(document.getElementById("trendChart"), {
         type: "line",
         data: {
             labels: data.map((_,i)=>i+1),
             datasets: [{
                 data: data,
-                borderColor: "#22d3ee",
-                backgroundColor: "rgba(34,211,238,0.15)",
+                borderColor: "#0099FF",
+                backgroundColor: "rgba(0,153,255,0.1)",
                 fill: true,
                 tension: 0.4,
+                borderWidth: 2,
                 pointRadius: 3
             }]
         },
         options: {
             plugins: { legend: { display: false }},
             scales: {
-                x: { display:false },
-                y: { display:false, min:0, max:1 }
+                x: { display: false },
+                y: { display: false, min: 0, max: 1 }
             },
-            animation: { duration: 1200 }
+            maintainAspectRatio: false
         }
     });
 }
 
-draw(trendData.slice(-10));
+drawTrendChart(trendData.slice(-10));
 
 document.getElementById("filter").addEventListener("change", e=>{
-    if(e.target.value=="5") draw(trendData.slice(-5));
-    else if(e.target.value=="10") draw(trendData.slice(-10));
-    else draw(trendData);
+    if(e.target.value=="5") drawTrendChart(trendData.slice(-5));
+    else if(e.target.value=="10") drawTrendChart(trendData.slice(-10));
+    else drawTrendChart(trendData);
 });
 
+// 🔄 AUTO-REFRESH — sync with PostgreSQL without a page reload
+async function fetchAnalyticsData() {
+    try {
+        const res = await fetch('/api/analytics_data');
+        const data = await res.json();
+
+        positive = data.positive;
+        negative = data.negative;
+        neutral = data.neutral;
+        trendData = data.trend;
+        emotions = data.emotions;
+
+        animateStat(document.getElementById('stat-total'), data.total);
+        animateStat(document.getElementById('stat-positive'), data.positive);
+        animateStat(document.getElementById('stat-negative'), data.negative);
+        animateStat(document.getElementById('stat-score'), data.score, { suffix: '%', decimals: 1 });
+
+        // 'none' skips the animation on auto-refresh updates - only the
+        // initial draw should animate, not every 30s poll.
+        donutChart.data.datasets[0].data = [positive, negative, neutral];
+        donutChart.update('none');
+
+        barChart.data.datasets[0].data = [positive, negative, neutral];
+        barChart.update('none');
+
+        emotionChart.data.labels = Object.keys(emotions);
+        emotionChart.data.datasets[0].data = Object.values(emotions);
+        emotionChart.update('none');
+
+        const activeFilter = document.getElementById("filter").value;
+        if (activeFilter === "5") drawTrendChart(trendData.slice(-5), false);
+        else if (activeFilter === "10") drawTrendChart(trendData.slice(-10), false);
+        else drawTrendChart(trendData, false);
+    } catch (e) { console.error("Error refreshing analytics:", e); }
+}
+
+// Auto-refresh every 30s, but only while the tab is actually visible.
+let analyticsPollId = setInterval(fetchAnalyticsData, 30000);
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        clearInterval(analyticsPollId);
+    } else {
+        fetchAnalyticsData();
+        analyticsPollId = setInterval(fetchAnalyticsData, 30000);
+    }
+});
+
+}); // end DOMContentLoaded
 </script>
 
 {% endblock %}

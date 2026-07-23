@@ -1,0 +1,31 @@
+{# Shared component macros - imported by any template that needs them, e.g.:
+   {% import "_macros.html" as macros %}
+   {{ macros.kpi_card("Total", value=42, color="text-primary", icon="database") }}
+
+   kpi_card is the ONE KPI card used everywhere (Dashboard, Analytics,
+   Customers, Reports, Admin) so every stat card in the app shares the same
+   markup/CSS - width, height, padding, typography, icon size, border
+   radius, spacing, hover state and animation all come from the single
+   .kpi-card/.kpi-card-icon rule set in static/style.css, not from a
+   per-page copy. #}
+
+{# `id` alone (no value) -> skeleton placeholder, JS fills it in later
+   (Dashboard's stats, which have no server-rendered value at all).
+   `value` alone -> plain server-rendered number, no JS involved
+   (Customers/Admin, which never live-update).
+   Both `id` and `value` -> shows the real value immediately (no
+   skeleton flash) but still carries the id so a later JS poll can
+   update it in place (Analytics, which server-renders on first paint
+   and then polls). #}
+{% macro kpi_card(title, value=None, id=None, color='text-primary', glow='from-primary/20 to-transparent', icon=None, suffix='') %}
+<div class="tilt-card glass kpi-card relative overflow-hidden group">
+    <div class="absolute inset-0 bg-gradient-to-br {{ glow }} opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+    <div class="kpi-card-head relative z-10">
+        <p class="kpi-card-label text-blue-200/60">{{ title }}</p>
+        {% if icon %}
+        <i data-lucide="{{ icon }}" class="kpi-card-icon {{ color }}"></i>
+        {% endif %}
+    </div>
+    <p {% if id %}id="{{ id }}"{% endif %} class="kpi-card-value {{ color }} relative z-10 drop-shadow-lg{% if value is none %} skeleton-text{% endif %}">{% if value is not none %}{{ value }}{{ suffix }}{% else %}&nbsp;{% endif %}</p>
+</div>
+{% endmacro %}

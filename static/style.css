@@ -1,27 +1,965 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  /* Brand tokens - identical in both themes */
+  --primary-color: #0099FF;
+  --primary-hover: #33ADFF;
+  --primary-glow: rgba(0, 153, 255, 0.4);
+
+  --secondary-color: #00D084;
+  --secondary-glow: rgba(0, 208, 132, 0.4);
+
+  --success: #00D084;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --info: #0099FF;
+
+  --font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+}
+
+/* Dark theme (default - matches the app's original look). Applied via
+   [data-theme="dark"], and also as the :root fallback so anything that
+   renders before theme.js's bootstrap script runs still looks correct. */
+:root,
+[data-theme="dark"] {
+  --bg-main: #0B1220;
+  --bg-sidebar: rgba(11, 18, 32, 0.92);
+  --bg-card: rgba(20, 29, 46, 0.85);
+  --bg-surface: rgba(15, 23, 42, 0.4);
+  --bg-surface-hover: rgba(15, 23, 42, 0.6);
+  --bg-input: rgba(0, 0, 0, 0.3);
+  --panel-solid: #0f1729;
+  --body-gradient: radial-gradient(circle at top right, #001f3f, #0B1220);
+
+  --text-primary: #FFFFFF;
+  --text-secondary: #8B9BB4;
+
+  --border-color: rgba(255, 255, 255, 0.08);
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --primary-transparent: rgba(0, 153, 255, 0.12);
+
+  /* RGB channel triplets (not full colors) so opacity-variant utility
+     classes below can compose rgba(var(--x-rgb), N) per theme instead of
+     each opacity step needing its own hardcoded hex - this is what makes
+     text-white/text-blue-200/bg-white-etc actually flip correctly in
+     light mode instead of staying hardcoded light-on-dark colors. */
+  --text-primary-rgb: 255, 255, 255;
+  --text-secondary-rgb: 191, 219, 254;
+  --overlay-rgb: 255, 255, 255;
+
+  /* Alternating section background (landing.html) - one shade off --bg-main
+     for visual rhythm between full-bleed marketing sections. */
+  --bg-alt: #121820;
+
+  /* .glass card shadow - stays a soft dark shadow in both themes (shadows
+     read as "dark" regardless of surface color), but light mode needs a
+     much softer/tighter one - a 40px-blur 30%-opacity shadow is subtle on
+     a dark surface but on a light surface it visibly bleeds well past a
+     card's edges, and with cards only ~24px apart (e.g. the KPI row)
+     neighboring cards' shadows overlapped enough to look like one
+     continuous shape instead of separate cards. */
+  --card-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  /* Stronger elevation shadow for floating/overlay elements (dropdown
+     panels, auth cards) that sit above everything else, not side-by-side
+     with siblings - same light-mode-needs-a-softer-shadow reasoning. */
+  --elevated-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* Light theme */
+[data-theme="light"] {
+  --bg-main: #F3F6FB;
+  --bg-sidebar: rgba(255, 255, 255, 0.94);
+  --bg-card: rgba(255, 255, 255, 0.9);
+  --bg-surface: rgba(255, 255, 255, 0.6);
+  --bg-surface-hover: rgba(255, 255, 255, 0.85);
+  --bg-input: rgba(11, 18, 32, 0.04);
+  --panel-solid: #ffffff;
+  --body-gradient: radial-gradient(circle at top right, #e4f0ff, #F3F6FB);
+
+  --text-primary: #0B1220;
+  --text-secondary: #4B5A72;
+
+  --border-color: rgba(11, 18, 32, 0.1);
+  --bg-hover: rgba(11, 18, 32, 0.05);
+  --primary-transparent: rgba(0, 153, 255, 0.1);
+
+  --text-primary-rgb: 11, 18, 32;
+  --text-secondary-rgb: 51, 65, 85;
+  --overlay-rgb: 11, 18, 32;
+
+  --bg-alt: #E9EEF6;
+
+  --card-shadow: 0 4px 16px rgba(11, 18, 32, 0.08);
+  --elevated-shadow: 0 16px 32px rgba(11, 18, 32, 0.16);
+}
+
+/* Smooth, scoped theme transition - only the properties that actually change
+   between themes, so it doesn't also slow down unrelated hover transitions. */
+body, .glass, .tilt-card, .card, .stat-card, .data-table-container,
+.custom-select-trigger, .custom-select-panel, .input-field, .sidebar,
+.auth-card {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
 body {
-    font-family: Arial;
-    background: #f5f6fa;
+  font-family: var(--font-family);
+  background: var(--body-gradient);
+  background-attachment: fixed;
+  color: var(--text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
-nav {
-    background: #2f3640;
-    color: white;
-    padding: 10px;
+a {
+  color: var(--primary-color);
+  text-decoration: none;
+  transition: color 0.2s ease;
 }
 
-.container {
-    padding: 20px;
+/* transform/opacity only, everywhere in this file, for anything that
+   transitions on :hover - those are the only two properties a browser can
+   animate purely on the compositor thread. Animating box-shadow/background/
+   border instead (the previous `transition: all`) forces a full repaint on
+   every intermediate frame of the hover transition, and with buttons/links
+   being the most-hovered elements on the page (nav, table actions,
+   pagination, every submit button), that was a constant, pervasive source
+   of jank during totally ordinary use - not a one-off animation, but every
+   single mouse-over. Shadow/background/border still change on hover, they
+   just snap instantly instead of animating, which costs one paint instead
+   of ~18 of them across a 0.3s transition. */
+button, a {
+  transition: transform 0.15s ease;
 }
 
-input, textarea {
-    width: 300px;
-    padding: 10px;
-    margin: 5px;
+button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(0, 153, 255, 0.6);
 }
+
+/* ============================================================
+   App shell - shared by every authenticated page via base.html.
+   Theme-aware (was previously hardcoded dark-only inside a <style>
+   block in base.html, silently overriding anything set here).
+   ============================================================ */
+.glass {
+  /* No backdrop-filter here - the app background behind cards is now a
+     static gradient (see base.html), so blurring it bought zero visible
+     difference while still forcing a full-page GPU blur pass on every
+     scroll/hover/repaint. Slightly higher opacity than before to keep the
+     same "frosted panel" read without the blur doing the work. */
+  background: var(--bg-card);
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--card-shadow);
+}
+
+.tilt-card {
+  /* transform only (no box-shadow in the transition) - box-shadow changes
+     can't be GPU-composited and force a repaint every animation frame;
+     transform-only hover is compositor-only and stays smooth even with
+     many cards on screen at once. */
+  transition: transform 0.2s ease;
+}
+
+.tilt-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 153, 255, 0.2);
+  border-color: rgba(0, 153, 255, 0.4);
+}
+
+.ai-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(0, 153, 255, 0.15), transparent 70%);
+  opacity: 0.8;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.sidebar {
+  width: 260px;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border-color);
+  box-shadow: 2px 0 30px rgba(0, 153, 255, 0.1);
+  position: relative;
+  animation: slideIn 0.6s ease;
+  z-index: 10;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  transition: transform 0.15s ease;
+  position: relative;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.nav-item:hover {
+  background: linear-gradient(135deg, rgba(0, 153, 255, 0.15), transparent);
+  color: var(--text-primary);
+  transform: translateX(5px);
+  box-shadow: 0 0 15px rgba(0, 153, 255, 0.2);
+  border: 1px solid rgba(0, 153, 255, 0.2);
+}
+
+.nav-item.active {
+  background: linear-gradient(135deg, rgba(0, 153, 255, 0.2), transparent);
+  color: var(--primary-color);
+  box-shadow: 0 0 20px rgba(0, 153, 255, 0.15);
+  border: 1px solid rgba(0, 153, 255, 0.3);
+}
+
+.nav-item.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 10%;
+  height: 80%;
+  width: 4px;
+  background: var(--primary-color);
+  border-radius: 10px;
+  box-shadow: 0 0 10px var(--primary-color);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(-20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.card {
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: var(--card-shadow);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 20px var(--primary-glow);
+  transform: translateY(-4px);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  color: #ffffff;
+  font-weight: 700;
+  border-radius: 12px;
+  padding: 12px 24px;
+  border: none;
+  transition: transform 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 0 25px var(--primary-glow);
+  transform: scale(1.05);
+}
+
+
 
 button {
-    padding: 10px 20px;
-    background: #00a8ff;
-    color: white;
-    border: none;
+  cursor: pointer;
+  font-family: inherit;
+  border: none;
+  background: none;
+}
+
+input, textarea, select {
+  font-family: inherit;
+}
+
+/* Page header (used by analytics/customers/reports/settings/admin - the
+   sidebar/nav-item rules for base.html's shell live in the "App shell"
+   section above; this file previously had a second, dead-but-conflicting
+   copy of .sidebar/.nav-item down here that silently overrode the
+   theme-aware version since it came later in the cascade - removed). */
+.page-header {
+  margin-bottom: 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 24px;
+}
+
+.page-title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  margin: 0;
+  text-shadow: 0 0 20px rgba(var(--overlay-rgb), 0.1);
+}
+
+.page-subtitle {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin-top: 6px;
+}
+
+/* Stats Grid - always a single row of equal-width KPI cards, on every
+   page, regardless of how many cards that page has (3, 4 or 5). No
+   background/border/shadow on this container itself - it's purely a flex
+   layout wrapper, so it can never render as a box of its own around the
+   cards. Cards shrink together via kpi-card's own flex-basis/min-width
+   rather than this element doing anything beyond spacing them out. */
+.stats-grid {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 24px;
+  margin-bottom: 48px;
+}
+
+/* ============================================================
+   KPI Card - the ONE stat-card component used on every page
+   (Dashboard, Analytics, Customers, Reports, Admin). Matches the
+   design Dashboard originally shipped with (glass + tilt-card +
+   hover glow) - every page renders this through the shared
+   kpi_card() macro in templates/_macros.html, so width, height,
+   padding, typography, icon size, radius, spacing, hover state and
+   animation can't drift apart per-page again.
+   ============================================================ */
+.kpi-card {
+  flex: 1 1 0;
+  min-width: 168px;
+  min-height: 148px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+@media (max-width: 640px) {
+  .kpi-card {
+    min-width: 140px;
+    padding: 18px;
+    min-height: 124px;
+  }
+}
+
+.kpi-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.kpi-card-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1.3;
+}
+
+.kpi-card-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.kpi-card-value {
+  font-size: 2.25rem;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+@media (max-width: 480px) {
+  .kpi-card-value { font-size: 1.875rem; }
+}
+
+/* Forms & Inputs Alignment Fix */
+.form-card {
+  max-width: 500px;
+  width: 100%;
+}
+
+.input-field {
+  width: 100%;
+  padding: 14px 18px;
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-size: 1rem;
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  margin-bottom: 4px;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  background-color: var(--bg-hover);
+  box-shadow: 0 0 0 3px var(--primary-transparent);
+}
+
+/* Browser autofill (Chrome/Edge) paints its own background color over any
+   input it recognizes, ignoring background-color entirely - this is what
+   made one autofilled field show up blue/yellow while its siblings stayed
+   correctly themed. The huge inset box-shadow is the standard trick to
+   paint over it with our own surface color instead. */
+.input-field:-webkit-autofill,
+.input-field:-webkit-autofill:hover,
+.input-field:-webkit-autofill:focus,
+.input:-webkit-autofill,
+.input:-webkit-autofill:hover,
+.input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-primary);
+  -webkit-box-shadow: 0 0 0 1000px var(--bg-input) inset;
+  box-shadow: 0 0 0 1000px var(--bg-input) inset;
+  transition: background-color 9999s ease-in-out 0s, color 9999s ease-in-out 0s;
+}
+
+.form-group {
+  margin-bottom: 24px;
+  width: 100%;
+}
+
+.data-entry-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Custom dropdown - replaces native <select> popups. The real <select> stays
+   in the DOM (hidden, not display:none) as the source of truth; this is a
+   pure presentation + keyboard-interaction layer on top of it. */
+.custom-select {
+  position: relative;
+  width: 100%;
+}
+
+.custom-select-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 18px;
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.custom-select-trigger:hover {
+  border-color: var(--primary-color);
+}
+
+.custom-select-trigger:focus-visible,
+.custom-select-trigger.is-open {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--primary-transparent);
+}
+
+.custom-select-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.custom-select-chevron {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  transition: transform 0.2s ease;
+}
+
+.custom-select-trigger.is-open .custom-select-chevron {
+  transform: rotate(180deg);
+  color: var(--primary-color);
+}
+
+.custom-select.is-disabled .custom-select-trigger {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.custom-select-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--panel-solid);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: var(--elevated-shadow);
+  animation: fadeIn 0.15s ease;
+}
+
+.custom-select-option {
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.custom-select-option.is-active {
+  background-color: var(--bg-hover);
+}
+
+.custom-select-option.is-selected {
+  color: var(--primary-color);
+  font-weight: 600;
+  background-color: var(--primary-transparent);
+}
+
+/* Compact variant - for inline filters that shouldn't stretch full-width */
+.custom-select--compact {
+  width: auto;
+  display: inline-block;
+}
+
+.custom-select--compact .custom-select-trigger {
+  width: auto;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  border-radius: 8px;
+}
+
+.custom-select--compact .custom-select-panel {
+  left: auto;
+  right: 0;
+  min-width: 140px;
+}
+
+/* Tables */
+.data-table-container {
+  background: var(--bg-surface);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  overflow: auto; /* Added scroll for responsiveness */
+  margin-top: 32px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th {
+  background-color: rgba(var(--overlay-rgb), 0.03);
+  color: var(--primary-color);
+  text-align: left;
+  padding: 18px 24px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.data-table td {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.data-table tr:hover {
+  background-color: rgba(var(--overlay-rgb), 0.05);
+}
+
+
+
+
+
+.btn-secondary {
+  background-color: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 12px 20px;
+  border-radius: 30px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.btn-secondary:hover {
+  border-color: var(--text-secondary);
+  background-color: rgba(var(--overlay-rgb), 0.05);
+}
+
+/* Auth Pages */
+.auth-container {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-main);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 440px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 48px;
+  box-shadow: var(--elevated-shadow);
+}
+
+.auth-title {
+  font-size: 1.75rem;
+  margin-bottom: 8px;
+  text-align: center;
+  font-weight: 800;
+}
+
+.auth-subtitle {
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: 32px;
+  font-size: 1rem;
+}
+
+
+
+
+
+
+
+
+
+.text-success { color: var(--success); }
+.text-danger { color: var(--danger); }
+.text-primary { color: var(--primary-color); }
+.text-warning { color: var(--warning); }
+.text-info { color: var(--info); }
+
+
+
+
+
+
+
+
+.data-table tr:hover td {
+  background-color: rgba(var(--overlay-rgb), 0.02);
+}
+
+.badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-block;
+  letter-spacing: 0.03em;
+}
+
+.badge-success { background-color: rgba(16, 185, 129, 0.15); color: var(--success); }
+.badge-danger { background-color: rgba(255, 77, 77, 0.15); color: var(--danger); }
+.badge-warning { background-color: rgba(255, 184, 77, 0.15); color: var(--warning); }
+
+/* Alerts */
+.alert {
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+.alert-error {
+  background-color: rgba(255, 77, 77, 0.1);
+  color: var(--danger);
+  border: 1px solid rgba(255, 77, 77, 0.3);
+}
+.alert-success {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: var(--success);
+  border: 1px solid rgba(0, 212, 182, 0.3);
+}
+
+/* Utilities */
+.mb-4 { margin-bottom: 16px; }
+.mb-6 { margin-bottom: 24px; }
+.mt-4 { margin-top: 16px; }
+.mt-6 { margin-top: 24px; }
+.flex { display: flex; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-2 { gap: 8px; }
+.gap-4 { gap: 16px; }
+.w-full { width: 100%; }
+.text-center { text-align: center; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+.font-medium { font-weight: 500; }
+.font-extrabold { font-weight: 800; }
+.font-black { font-weight: 900; }
+.text-left { text-align: left; }
+
+/* ============================================================
+   Ported Tailwind-equivalent utility layer
+   These replace the removed cdn.tailwindcss.com JIT compiler.
+   Only the classes actually used across templates are defined -
+   this is not a general-purpose Tailwind clone.
+   ============================================================ */
+
+/* Spacing scale (matches the 4px-based scale the templates already assume) */
+.p-3 { padding: 12px; }
+.p-4 { padding: 16px; }
+.p-6 { padding: 24px; }
+.p-8 { padding: 32px; }
+.p-10 { padding: 40px; }
+.px-2 { padding-left: 8px; padding-right: 8px; }
+.px-4 { padding-left: 16px; padding-right: 16px; }
+.px-5 { padding-left: 20px; padding-right: 20px; }
+.py-1 { padding-top: 4px; padding-bottom: 4px; }
+.py-1\.5 { padding-top: 6px; padding-bottom: 6px; }
+.py-2\.5 { padding-top: 10px; padding-bottom: 10px; }
+.pt-3 { padding-top: 12px; }
+.mb-1 { margin-bottom: 4px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-3 { margin-bottom: 12px; }
+.mb-8 { margin-bottom: 32px; }
+.mb-10 { margin-bottom: 40px; }
+.mt-1 { margin-top: 4px; }
+.mt-3 { margin-top: 12px; }
+.gap-1 { gap: 4px; }
+.gap-3 { gap: 12px; }
+.gap-6 { gap: 24px; }
+.space-y-1 > * + * { margin-top: 4px; }
+.space-y-3 > * + * { margin-top: 12px; }
+.min-w-0 { min-width: 0; }
+
+/* Sizing (mostly icon glyphs + a couple of fixed-size widgets) */
+.w-3 { width: 12px; } .h-3 { height: 12px; }
+.w-4 { width: 16px; } .h-4 { height: 16px; }
+.w-5 { width: 20px; } .h-5 { height: 20px; }
+.w-8 { width: 32px; } .h-8 { height: 32px; }
+.w-64 { width: 256px; } .h-64 { height: 256px; }
+.h-screen { height: 100vh; }
+.min-h-100 { min-height: 100px; }
+.chart-h-sm { height: 250px; }
+.max-w-table-cell { max-width: 200px; }
+
+/* Typography */
+.text-2xs { font-size: 10px; }
+.text-xs { font-size: 12px; }
+.text-sm { font-size: 14px; }
+.text-xl { font-size: 20px; }
+.text-2xl { font-size: 24px; }
+.text-3xl { font-size: 30px; }
+.text-4xl { font-size: 36px; }
+.uppercase { text-transform: uppercase; }
+.underline { text-decoration: underline; }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tracking-wide { letter-spacing: 0.025em; }
+.tracking-wider { letter-spacing: 0.05em; }
+.tracking-widest { letter-spacing: 0.1em; }
+.leading-relaxed { line-height: 1.625; }
+.list-disc { list-style-type: disc; }
+.list-inside { list-style-position: inside; }
+
+/* Layout / position / display */
+.grid { display: grid; }
+.grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+.grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.flex-col { flex-direction: column; }
+.flex-1 { flex: 1 1 0%; }
+.flex-wrap { flex-wrap: wrap; }
+.justify-around { justify-content: space-around; }
+.justify-center { justify-content: center; }
+.relative { position: relative; }
+.absolute { position: absolute; }
+.sticky { position: sticky; }
+.top-0 { top: 0; }
+.inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+.overflow-hidden { overflow: hidden; }
+.overflow-x-auto { overflow-x: auto; }
+.overflow-y-auto { overflow-y: auto; }
+.z-10 { z-index: 10; }
+.z-20 { z-index: 20; }
+.z-50 { z-index: 50; }
+.opacity-0 { opacity: 0; }
+
+/* Borders */
+.border { border-width: 1px; border-style: solid; border-color: var(--border-color); }
+.border-t { border-top: 1px solid var(--border-color); }
+.border-b { border-bottom: 1px solid var(--border-color); }
+.border-transparent { border-color: transparent; }
+.border-collapse { border-collapse: collapse; }
+.rounded-md { border-radius: 6px; }
+.rounded-xl { border-radius: 12px; }
+.rounded-full { border-radius: 9999px; }
+
+/* Transitions */
+.transition { transition: all 0.15s ease; }
+.transition-all { transition: all 0.3s ease; }
+.transition-colors { transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease; }
+.transition-opacity { transition: opacity 0.3s ease; }
+.duration-300 { transition-duration: 0.3s; }
+.duration-500 { transition-duration: 0.5s; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+/* Brand glow shadows (replace Tailwind arbitrary-value shadow-[...] classes) */
+.shadow-glow-primary-sm { box-shadow: 0 0 15px rgba(0, 153, 255, 0.3); }
+.shadow-glow-primary-lg { box-shadow: 0 0 30px rgba(0, 153, 255, 0.1); }
+.shadow-glow-secondary-sm { box-shadow: 0 0 15px rgba(0, 208, 132, 0.3); }
+.drop-shadow-lg { filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3)); }
+.drop-shadow-md { filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25)); }
+.drop-shadow-glow-primary { filter: drop-shadow(0 0 10px rgba(0, 153, 255, 0.5)); }
+.drop-shadow-glow-secondary { filter: drop-shadow(0 0 10px rgba(0, 208, 132, 0.5)); }
+.drop-shadow-glow-danger { filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.5)); }
+.drop-shadow-glow-current { filter: drop-shadow(0 0 8px currentColor); }
+
+/* Color palette used alongside the brand tokens (Tailwind's blue/gray/red
+   scale, kept only where templates already relied on it) with the exact
+   opacity variants in use, matching Tailwind's slash-opacity class names.
+   These resolve through the theme's --text-primary-rgb/--text-secondary-rgb/
+   --overlay-rgb tokens (defined per-theme above) instead of hardcoded
+   light-on-dark hex, so they render correctly in both dark and light mode -
+   this is what "text-white" on a light background needs to NOT be white. */
+.text-white { color: var(--text-primary); }
+.text-white\/90 { color: rgba(var(--text-primary-rgb), 0.9); }
+.text-gray-400,
+.text-gray-500 { color: var(--text-secondary); }
+.text-red-400 { color: #f87171; }
+.text-red-400\/70 { color: rgba(248, 113, 113, 0.7); }
+.text-blue-100\/80 { color: rgba(var(--text-secondary-rgb), 0.8); }
+.text-blue-200 { color: rgba(var(--text-secondary-rgb), 1); }
+.text-blue-200\/40 { color: rgba(var(--text-secondary-rgb), 0.4); }
+.text-blue-200\/50 { color: rgba(var(--text-secondary-rgb), 0.5); }
+.text-blue-200\/60 { color: rgba(var(--text-secondary-rgb), 0.6); }
+.text-blue-200\/70 { color: rgba(var(--text-secondary-rgb), 0.7); }
+.text-blue-300 { color: rgba(var(--text-secondary-rgb), 0.9); }
+
+.bg-primary\/20 { background-color: rgba(0, 153, 255, 0.2); }
+.bg-secondary\/10 { background-color: rgba(0, 208, 132, 0.1); }
+.bg-secondary\/20 { background-color: rgba(0, 208, 132, 0.2); }
+.bg-white\/5 { background-color: rgba(var(--overlay-rgb), 0.05); }
+.bg-white\/10 { background-color: rgba(var(--overlay-rgb), 0.1); }
+.bg-gradient-to-br { background-image: linear-gradient(to bottom right, var(--tw-from, transparent), var(--tw-to, transparent)); }
+.bg-gradient-to-r { background-image: linear-gradient(to right, var(--tw-from, transparent), var(--tw-to, transparent)); }
+.from-white\/10 { --tw-from: rgba(var(--overlay-rgb), 0.1); }
+.from-secondary\/20 { --tw-from: rgba(0, 208, 132, 0.2); }
+.from-red-500\/20 { --tw-from: rgba(239, 68, 68, 0.2); }
+.from-primary\/20 { --tw-from: rgba(0, 153, 255, 0.2); }
+.from-blue-400\/20 { --tw-from: rgba(96, 165, 250, 0.2); }
+.from-primary\/10 { --tw-from: rgba(0, 153, 255, 0.1); }
+.to-transparent { --tw-to: transparent; }
+
+.border-primary\/30 { border-color: rgba(0, 153, 255, 0.3); }
+.border-primary\/50 { border-color: rgba(0, 153, 255, 0.5); }
+.border-secondary\/30 { border-color: rgba(0, 208, 132, 0.3); }
+.border-secondary\/50 { border-color: rgba(0, 208, 132, 0.5); }
+.border-white\/5 { border-color: rgba(var(--overlay-rgb), 0.05); }
+.border-white\/10 { border-color: rgba(var(--overlay-rgb), 0.1); }
+.border-white\/20 { border-color: rgba(var(--overlay-rgb), 0.2); }
+
+.hover\:text-primary:hover { color: var(--primary-color); }
+.hover\:text-red-500:hover { color: #ef4444; }
+.hover\:bg-white\/5:hover { background-color: rgba(var(--overlay-rgb), 0.05); }
+.hover\:bg-white\/10:hover { background-color: rgba(var(--overlay-rgb), 0.1); }
+.hover\:bg-red-500\/10:hover { background-color: rgba(239, 68, 68, 0.1); }
+.hover\:border-red-500\/30:hover { border-color: rgba(239, 68, 68, 0.3); }
+
+/* group-hover pairing */
+.group:hover .group-hover\:opacity-100 { opacity: 1; }
+
+/* Responsive grid variants (breakpoints match the sm/md/lg values already
+   authored into the templates) */
+@media (min-width: 640px) {
+  .sm\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 768px) {
+  .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .md\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 1024px) {
+  .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .lg\:grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .lg\:col-span-2 { grid-column: span 2 / span 2; }
+}
+
+/* Floating theme toggle - used on the standalone pages (login/register/
+   error/landing) that don't have a sidebar to put a toggle nav item in. */
+.theme-toggle-fab {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 200;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.theme-toggle-fab:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 20px var(--primary-glow);
+  transform: scale(1.05);
+}
+
+.theme-toggle-fab i {
+  width: 20px;
+  height: 20px;
+}
+
+/* KPI value change flash - used by animateStat() (static/js/kpi-count.js)
+   for non-numeric stat updates (e.g. a label swap) that can't be tweened. */
+@keyframes statPulse {
+  0% { opacity: 0.3; transform: scale(0.97); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.stat-pulse {
+  animation: statPulse 0.4s ease-out;
 }

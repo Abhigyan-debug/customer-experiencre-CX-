@@ -1,385 +1,533 @@
 {% extends "base.html" %}
+{% import "_macros.html" as macros %}
 {% block content %}
 
-<div class="fade-in">
+<div class="fade-in relative z-10">
 
 <!--  HEADER -->
-<div class="flex justify-between items-center mb-6">
+<div class="flex justify-between items-center mb-8">
 
     <div>
-        <h2 class="text-3xl font-semibold text-white flex items-center gap-2">
-            Dashboard Overview 🚀
+        <h2 class="text-4xl font-extrabold text-white flex items-center gap-3 drop-shadow-md">
+            Dashboard
         </h2>
-        <p class="text-gray-400 text-sm mt-1">
-            AI-powered customer insights & sentiment intelligence
+        <p class="text-blue-200 text-sm mt-1 font-medium tracking-wide">
+            Holographic Sentiment Intelligence Core
         </p>
     </div>
 
-    <div class="text-xs text-green-400 bg-green-500/10 px-3 py-1 rounded-full">
-        🧠 AI Active
+    <div class="text-xs text-secondary border border-secondary/30 bg-secondary/10 px-4 py-1.5 rounded-full shadow-glow-secondary-sm animate-pulse font-bold tracking-wider">
+        AI CORE ACTIVE
     </div>
 
 </div>
 
 <!-- 🔘 VIEW SWITCH -->
-<div class="flex gap-3 mb-6">
+<div class="flex gap-4 mb-8">
     <a href="/dashboard?view=my"
-       class="px-4 py-2 rounded-lg transition
-       {% if view == 'my' %}bg-blue-500 text-white{% else %}bg-white/10 text-gray-300{% endif %}">
-       👤 My Data
+       class="px-5 py-2.5 rounded-xl font-bold transition border {% if view == 'my' %}bg-primary/20 text-primary border-primary/50 shadow-glow-primary-sm{% else %}bg-white/5 text-gray-400 border-transparent hover:bg-white/10{% endif %}">
+       My Data
     </a>
 
     {% if current_user.role == 'admin' %}
     <a href="/dashboard?view=all"
-       class="px-4 py-2 rounded-lg transition
-       {% if view == 'all' %}bg-purple-500 text-white{% else %}bg-white/10 text-gray-300{% endif %}">
-       🌐 All Data
+       class="px-5 py-2.5 rounded-xl font-bold transition border {% if view == 'all' %}bg-secondary/20 text-secondary border-secondary/50 shadow-glow-secondary-sm{% else %}bg-white/5 text-gray-400 border-transparent hover:bg-white/10{% endif %}">
+       All Data
     </a>
     {% endif %}
 </div>
 
-<!-- 🚨 ALERT -->
-{% if alert %}
-<div class="bg-red-500/20 border border-red-400 p-4 rounded-xl mb-6 text-center animate-pulse">
-    {{ alert }}
-</div>
-{% endif %}
-
 <!-- 📊 STATS -->
-<div class="grid grid-cols-5 gap-4 mb-6">
+<div class="stats-grid">
+    {{ macros.kpi_card("Total", id="stat-total", color="text-white", glow="from-white/10 to-transparent", icon="users") }}
+    {{ macros.kpi_card("Positive", id="stat-positive", color="text-secondary", glow="from-secondary/20 to-transparent", icon="thumbs-up") }}
+    {{ macros.kpi_card("Negative", id="stat-negative", color="text-red-400", glow="from-red-500/20 to-transparent", icon="thumbs-down") }}
+    {{ macros.kpi_card("Positive %", id="stat-percent", color="text-primary", glow="from-primary/20 to-transparent", icon="percent") }}
+    {{ macros.kpi_card("Top Emotion", id="stat-emotion", color="text-blue-300", glow="from-blue-400/20 to-transparent", icon="activity") }}
+</div>
 
-    {% macro stat(title,value,color) %}
-    <div class="card">
-        <p class="text-gray-400 text-sm">{{ title }}</p>
-        <p class="text-4xl font-bold {{ color }} mt-1">{{ value }}</p>
-        <p class="text-xs text-gray-500 mt-1">Updated now</p>
+<!-- AI INSIGHTS -->
+<div class="tilt-card glass p-6 mb-8">
+    <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+        <h3 class="text-primary font-bold uppercase tracking-widest text-sm flex items-center gap-2">
+            <i data-lucide="sparkles" class="w-4 h-4"></i> AI Insights
+        </h3>
+        <a href="/refresh_ai" class="text-xs text-blue-200/60 hover:text-primary transition flex items-center gap-1">
+            <i data-lucide="refresh-cw" class="w-3 h-3"></i> Regenerate
+        </a>
     </div>
-    {% endmacro %}
 
-    {{ stat("Total", total, "text-blue-400") }}
-    {{ stat("Positive", positive, "text-green-400") }}
-    {{ stat("Negative", negative, "text-red-400") }}
-    {{ stat("Positive %", positive_percent ~ "%", "text-yellow-400") }}
-    {{ stat("Top Emotion", top_emotion, "text-purple-400") }}
+    <p class="text-sm text-blue-100/80 leading-relaxed mb-4">{{ insight.summary }}</p>
 
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-red-400 mb-2">Pain Points</p>
+            <ul class="text-xs text-blue-200/70 space-y-1 list-disc list-inside">
+                {% for p in insight.pain_points %}<li>{{ p }}</li>{% else %}<li>No issues detected.</li>{% endfor %}
+            </ul>
+        </div>
+        <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-secondary mb-2">Highlights</p>
+            <ul class="text-xs text-blue-200/70 space-y-1 list-disc list-inside">
+                {% for h in insight.positive_highlights %}<li>{{ h }}</li>{% else %}<li>Not enough data yet.</li>{% endfor %}
+            </ul>
+        </div>
+        <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-primary mb-2">Recommendations</p>
+            <ul class="text-xs text-blue-200/70 space-y-1 list-disc list-inside">
+                {% for r in insight.recommendations %}<li>{{ r }}</li>{% else %}<li>Keep monitoring feedback.</li>{% endfor %}
+            </ul>
+        </div>
+    </div>
 </div>
 
-<div class="card mt-6 text-center">
-    <h3 class="text-yellow-400 mb-2">📊 Model Performance</h3>
+<!-- 🧠 HEALTH & PERF -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    <div class="tilt-card glass p-8 text-center relative overflow-hidden flex flex-col justify-center border-primary/30 shadow-glow-primary-lg">
+        <div class="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent"></div>
+        <h2 class="text-3xl font-black relative z-10 mb-2" id="health-status">
+            Loading...
+        </h2>
+        <p class="text-blue-200/60 text-sm font-bold uppercase tracking-widest relative z-10">
+            System Health
+        </p>
+    </div>
 
-    <p>Accuracy: <span class="text-green-400">{{ accuracy }}%</span></p>
-    <p>Precision: <span class="text-blue-400">{{ precision }}%</span></p>
-    <p>Recall: <span class="text-purple-400">{{ recall }}%</span></p>
+    <div class="tilt-card glass p-8 text-center flex flex-col justify-center">
+        <h3 class="text-primary font-bold uppercase tracking-widest mb-4 text-sm" title="Agreement between the classifier's current output and each row's originally-stored label - not accuracy against a labeled ground truth, since none exists for this data.">
+            Self-Consistency
+        </h3>
+        <div class="flex justify-around">
+            <div><p class="text-xs text-gray-400 mb-1">Consistency</p><p class="font-bold text-secondary text-xl" id="perf-acc">--%</p></div>
+            <div><p class="text-xs text-gray-400 mb-1">Precision</p><p class="font-bold text-primary text-xl" id="perf-pre">--%</p></div>
+            <div><p class="text-xs text-gray-400 mb-1">Recall</p><p class="font-bold text-blue-300 text-xl" id="perf-rec">--%</p></div>
+        </div>
+    </div>
 </div>
 
-<!-- 🧠 HEALTH -->
-<div class="card text-center mb-6 border border-yellow-400/30 relative overflow-hidden">
-
-    <div class="absolute inset-0 bg-gradient-to-r from-yellow-500/10 to-transparent blur-xl"></div>
-
-    <h2 class="text-2xl font-bold relative z-10">
-        {% if positive_percent >= 70 %}
-            <span class="text-green-400">🟢 Excellent</span>
-        {% elif positive_percent >= 40 %}
-            <span class="text-yellow-400">🟡 Moderate</span>
-        {% else %}
-            <span class="text-red-400">🔴 Critical</span>
-        {% endif %}
-        : {{ positive_percent }}%
-    </h2>
-
-    <p class="text-gray-400 text-sm mt-1 relative z-10">
-        AI evaluated customer experience health
-    </p>
-
-</div>
-
-<div class="grid grid-cols-3 gap-6">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
     <!-- 📥 INPUT -->
-    <div class="card">
+    <div class="tilt-card glass p-6">
 
-        <form method="POST" enctype="multipart/form-data" class="mb-4">
+        <h3 class="text-primary font-bold uppercase tracking-widest mb-4 text-sm">Input Data</h3>
+
+        <form id="feedbackForm" class="relative z-20">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="file" name="file" class="input mb-2">
-            <button class="btn-green">Upload CSV</button>
+            <input name="name" id="f-name" placeholder="Name" class="input" pattern="[A-Za-z ]+" title="Letters only">
+            <p id="f-name-error" class="field-error hidden"></p>
+            <input name="phone" id="f-phone" placeholder="Phone" class="input" inputmode="numeric" pattern="\d{10}" maxlength="10" title="10 digit phone number">
+            <p id="f-phone-error" class="field-error hidden"></p>
+            <input name="service" id="f-service" placeholder="Service" class="input">
+
+            <textarea id="f-text" name="feedback"
+                placeholder="Type feedback here for live analysis..."
+                class="input min-h-100"></textarea>
+
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-xs text-gray-400">Live Status:</span>
+                <p id="liveSentiment" class="text-sm font-bold text-gray-500">Waiting...</p>
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn-primary w-full">Submit to Core</button>
         </form>
 
-        <form method="POST">
+        <form method="POST" action="/dashboard" enctype="multipart/form-data" class="mt-3 pt-3 border-t border-white/10 flex items-center gap-2">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input name="name" placeholder="Name" class="input">
-            <input name="phone" placeholder="Phone" class="input">
-            <input name="service" placeholder="Service" class="input">
-
-            <textarea id="feedbackBox" name="feedback"
-                placeholder="Feedback"
-                class="input"></textarea>
-
-            <p id="liveSentiment" class="mb-3"></p>
-
-            <button class="btn-primary">Analyze</button>
+            <input type="file" name="file" accept=".csv" class="text-xs text-gray-400 flex-1 min-w-0">
+            <button type="submit" class="btn-primary" style="padding: 8px 14px; font-size: 0.75rem; white-space: nowrap;">Import CSV</button>
         </form>
 
     </div>
 
     <!-- 📈 TREND -->
-    <div class="card col-span-2">
+    <div class="tilt-card glass p-6 lg:col-span-2 flex flex-col">
 
-        <div class="flex justify-between mb-3">
-            <h3 class="text-blue-400">📈 Sentiment Trend</h3>
-            <span class="text-xs text-gray-400">Real-time analysis</span>
+        <div class="flex justify-between mb-4">
+            <h3 class="text-primary font-bold uppercase tracking-widest text-sm">Sentiment Trend</h3>
+            <span class="text-xs text-blue-200/50">Real-time sync</span>
         </div>
 
-        <canvas id="myChart"></canvas>
+        <div class="flex-1 relative w-full chart-h-sm">
+            <canvas id="myChart"></canvas>
+            <p id="trend-empty" class="hidden absolute inset-0 flex items-center justify-center text-sm text-blue-200/40">No feedback yet - submit some to see the trend.</p>
+        </div>
 
     </div>
 
 </div>
 
 <!-- 🍩 DONUT -->
-<div class="card mt-6 flex justify-center">
-    <div class="w-72 h-72">
+<div class="tilt-card glass p-6 mt-6 flex flex-col items-center">
+    <h3 class="text-primary font-bold uppercase tracking-widest mb-4 text-sm w-full text-left">Distribution</h3>
+    <div class="w-64 h-64 relative">
         <canvas id="pieChart"></canvas>
     </div>
 </div>
 
-<!-- 🧠 AI INSIGHTS -->
-<div class="card mt-6">
-    <h3 class="text-xl text-blue-400 mb-2">🧠 AI Insights</h3>
-
-   <div class="space-y-4 text-gray-300">
-
-    <!-- Summary -->
-    <div>
-        <h3 class="text-green-400 font-semibold text-lg">📊 Summary</h3>
-        <p class="mt-1 leading-relaxed">
-            {{ insight.summary }}
-        </p>
-    </div>
-
-    <!-- Problems -->
-    <div>
-        <h3 class="text-red-400 font-semibold text-lg">⚠ Problems</h3>
-        <ul class="mt-2 space-y-1">
-            {% for p in insight.problems %}
-                <li class="ml-4">• {{ p }}</li>
-            {% endfor %}
-        </ul>
-    </div>
-
-    <!-- Suggestions -->
-    <div>
-        <h3 class="text-blue-400 font-semibold text-lg">💡 Suggestions</h3>
-        <ul class="mt-2 space-y-1">
-            {% for s in insight.suggestions %}
-                <li class="ml-4">• {{ s }}</li>
-            {% endfor %}
-        </ul>
-    </div>
-
-</div>
-
 <!-- 📋 TABLE -->
-<div class="card mt-6">
-    <table class="w-full text-left">
-
-        <tr class="border-b border-gray-700 text-gray-400">
-            <th class="p-3">Name</th>
-            <th class="p-3">Phone</th>
-            <th class="p-3">Service</th>
-            <th class="p-3">Feedback</th>
-            <th class="p-3">Sentiment</th>
-            <th class="p-3">Emotion</th>
-        </tr>
-
-        {% for f in feedbacks %}
-        <tr class="border-b border-gray-800 hover:bg-white/5">
-
-            <td class="p-3">{{ f.name }}</td>
-            <td class="p-3 text-gray-400">{{ f.phone }}</td>
-            <td class="p-3 text-gray-400">{{ f.service }}</td>
-            <td class="p-3 text-gray-500 max-w-xs truncate">{{ f.text }}</td>
-
-            <td class="p-3">
-                <span class="badge
-                {% if f.sentiment=='Positive' %}green
-                {% elif f.sentiment=='Negative' %}red
-                {% else %}yellow{% endif %}">
-                {{ f.sentiment }}
-                </span>
-            </td>
-
-            <td class="p-3">
-                <span class="badge">{{ f.emotion }}</span>
-            </td>
-
-        </tr>
-        {% endfor %}
-
-    </table>
+<div class="tilt-card glass p-6 mt-6 overflow-hidden">
+    <h3 class="text-primary font-bold uppercase tracking-widest mb-4 text-sm">Recent Interactions</h3>
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b border-white/10 text-blue-200/60 text-xs uppercase tracking-wider">
+                    <th class="p-4 font-semibold">Name</th>
+                    <th class="p-4 font-semibold">Service</th>
+                    <th class="p-4 font-semibold">Feedback</th>
+                    <th class="p-4 font-semibold">Sentiment</th>
+                    <th class="p-4 font-semibold">Confidence</th>
+                    <th class="p-4 font-semibold">Emotion</th>
+                </tr>
+            </thead>
+            <tbody id="recentTable">
+                <tr><td colspan="6" class="p-4"><span class="skeleton-text" style="width: 100%; display: block; height: 1.2em;">&nbsp;</span></td></tr>
+                <tr><td colspan="6" class="p-4"><span class="skeleton-text" style="width: 100%; display: block; height: 1.2em;">&nbsp;</span></td></tr>
+            </tbody>
+        </table>
+    </div>
 </div>
 
 </div>
 
 <!-- 🔥 STYLES -->
 <style>
-.card{
-    padding:20px;
-    background:rgba(255,255,255,0.05);
-    border-radius:12px;
-    border:1px solid rgba(255,255,255,0.08);
-    transition: all 0.35s ease;
+.input {
+    width: 100%;
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 }
-.card:hover{
-    transform:translateY(-6px) scale(1.01);
-    box-shadow:0 12px 30px rgba(0,0,0,0.4);
-}
-
-.fade-in{
-    animation:fadeIn 0.8s ease-in-out;
-}
-@keyframes fadeIn{
-    from{opacity:0; transform:translateY(10px);}
-    to{opacity:1; transform:translateY(0);}
+.input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px var(--primary-transparent);
+    background: var(--bg-hover);
 }
 
-.input{
-    width:100%;
-    padding:10px;
-    margin-bottom:10px;
-    border-radius:8px;
-    background:#111827;
-    border:1px solid #374151;
+/* .btn-primary intentionally not redefined here - style.css's shared
+   .btn-primary already covers this, and duplicating it locally with
+   slightly different padding/shadow is exactly the kind of per-page drift
+   the KPI/UI-consistency pass is meant to eliminate. */
+
+.input.is-invalid {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
 }
 
-.btn-primary{
-    width:100%;
-    padding:10px;
-    border-radius:8px;
-    background:linear-gradient(to right,#3b82f6,#9333ea);
-}
-.btn-green{
-    width:100%;
-    padding:10px;
-    border-radius:8px;
-    background:#16a34a;
+.field-error {
+    color: var(--danger);
+    font-size: 0.75rem;
+    margin: -8px 0 12px;
 }
 
-.badge{
-    padding:4px 10px;
-    border-radius:999px;
-    font-size:12px;
+.badge {
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
-.green{background:#22c55e20;color:#22c55e;}
-.red{background:#ef444420;color:#ef4444;}
-.yellow{background:#eab30820;color:#eab308;}
+.badge-pos { background: rgba(0,208,132,0.15); color: #00D084; border: 1px solid rgba(0,208,132,0.3); }
+.badge-neg { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+.badge-neu { background: rgba(0,153,255,0.15); color: #0099FF; border: 1px solid rgba(0,153,255,0.3); }
 
-canvas{
-    filter: drop-shadow(0 0 12px rgba(59,130,246,0.2));
+.skeleton-text {
+    display: inline-block;
+    min-width: 3em;
+    min-height: 1em;
+    border-radius: 6px;
+    background: linear-gradient(90deg, rgba(var(--overlay-rgb),0.08) 25%, rgba(var(--overlay-rgb),0.18) 37%, rgba(var(--overlay-rgb),0.08) 63%);
+    background-size: 400% 100%;
+    animation: skeleton-pulse 1.4s ease infinite;
 }
+.skeleton-text.loaded { animation: none; background: none; min-width: 0; min-height: 0; display: inline; }
+@keyframes skeleton-pulse {
+    0% { background-position: 100% 50%; }
+    100% { background-position: 0 50%; }
+}
+.hidden { display: none !important; }
 </style>
 
-<!-- 🔥 CHART -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script>
-const labels = {{ labels|tojson }};
-const dataValues = {{ data_values|tojson }};
+let lineChart, donutChart;
 
-// 📈 LINE (SMOOTH)
-new Chart(document.getElementById('myChart'), {
-    type: 'line',
-    data: {
-        labels: labels,
-        datasets: [{
-            data: dataValues,
-            borderColor: '#3b82f6',
-            backgroundColor: 'rgba(59,130,246,0.15)',
-            fill: true,
-            tension: 0.45,
-            pointRadius: 0,
-            pointHoverRadius: 6,
-            borderWidth: 3
-        }]
-    },
-    options: {
-        animation: {
-            duration: 1200,
-            easing: 'easeOutQuart'
-        },
-        plugins: {
-            legend: { display:false }
-        }
-    }
-});
-
-// 🍩 DONUT (SMOOTH)
-new Chart(document.getElementById('pieChart'), {
-    type: 'doughnut',
-    data: {
-        labels: ['Positive', 'Negative', 'Neutral'],
-        datasets: [{
-            data: [{{ positive }}, {{ negative }}, {{ total - positive - negative }}],
-            backgroundColor: ['#22c55e','#ef4444','#eab308'],
-            borderWidth: 0,
-            hoverOffset: 20
-        }]
-    },
-    options: {
-        cutout: '72%',
-        animation: {
-            animateRotate:true,
-            duration:1400,
-            easing:'easeOutExpo'
-        },
-        plugins: {
-            legend: {
-                labels: { color: 'white' }
+// Init Charts
+function initCharts() {
+    const ctxLine = document.getElementById('myChart').getContext('2d');
+    lineChart = new Chart(ctxLine, {
+        type: 'line',
+        data: { labels: [], datasets: [{
+            data: [], borderColor: '#0099FF', backgroundColor: 'rgba(0,153,255,0.1)',
+            fill: true, tension: 0.4, pointRadius: 2, pointHoverRadius: 6, borderWidth: 3
+        }]},
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            animation: { duration: 800 },
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { display: false },
+                y: { display: false, min: 0, max: 1 }
             }
         }
+    });
+
+    const ctxDonut = document.getElementById('pieChart').getContext('2d');
+    donutChart = new Chart(ctxDonut, {
+        type: 'doughnut',
+        data: { labels: ['Positive', 'Negative', 'Neutral'], datasets: [{
+            data: [0,0,0], backgroundColor: ['#00D084','#ef4444','#f59e0b'],
+            borderWidth: 0, hoverOffset: 10
+        }]},
+        options: {
+            cutout: '75%', responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { color: window.pulsecxChartTextColor ? window.pulsecxChartTextColor() : '#8B9BB4', padding: 20, font: { family: 'Plus Jakarta Sans', size: 12 } } } }
+        }
+    });
+}
+
+const CURRENT_VIEW = "{{ view }}";
+
+function setStat(id, value, opts) {
+    const el = document.getElementById(id);
+    animateStat(el, value, opts);
+    el.classList.add('loaded');
+}
+
+async function fetchDashboardData() {
+    try {
+        const res = await fetch('/api/dashboard_data?view=' + encodeURIComponent(CURRENT_VIEW));
+        if (!res.ok) throw new Error('Request failed with ' + res.status);
+        const data = await res.json();
+
+        // Update Stats - values animate (count up/down) instead of snapping
+        setStat('stat-total', data.total);
+        setStat('stat-positive', data.positive);
+        setStat('stat-negative', data.negative);
+        setStat('stat-percent', data.positive_percent, { suffix: '%', decimals: 1 });
+        setStat('stat-emotion', data.top_emotion);
+
+        setStat('perf-acc', data.accuracy, { suffix: '%', decimals: 1 });
+        setStat('perf-pre', data.precision, { suffix: '%', decimals: 1 });
+        setStat('perf-rec', data.recall, { suffix: '%', decimals: 1 });
+
+        const healthEl = document.getElementById('health-status');
+        if (data.total === 0) {
+            healthEl.innerHTML = `<span class="text-blue-200/50">No data yet</span>`;
+        } else if (data.positive_percent >= 70) {
+            healthEl.innerHTML = `<span class="text-secondary drop-shadow-glow-secondary">Excellent (${data.positive_percent}%)</span>`;
+        } else if (data.positive_percent >= 40) {
+            healthEl.innerHTML = `<span class="text-primary drop-shadow-glow-primary">Moderate (${data.positive_percent}%)</span>`;
+        } else {
+            healthEl.innerHTML = `<span class="text-red-400 drop-shadow-glow-danger">Critical (${data.positive_percent}%)</span>`;
+        }
+
+        // Update Charts - 'none' skips Chart.js's animation on this update,
+        // so the 30s auto-refresh doesn't replay a growth animation on
+        // charts you're already looking at (only the very first draw, in
+        // initCharts(), animates).
+        lineChart.data.labels = data.labels;
+        lineChart.data.datasets[0].data = data.data_values;
+        lineChart.update('none');
+        document.getElementById('trend-empty').classList.toggle('hidden', data.total > 0);
+
+        donutChart.data.datasets[0].data = [data.positive, data.negative, data.neutral];
+        donutChart.update('none');
+
+        // Update Table
+        const tbody = document.getElementById('recentTable');
+        if (data.recent_feedbacks.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-blue-200/40">No feedback yet - submit some above to see it here.</td></tr>`;
+        } else {
+            tbody.innerHTML = data.recent_feedbacks.map(f => {
+                const badgeClass = f.sentiment === 'Positive' ? 'badge-pos' : f.sentiment === 'Negative' ? 'badge-neg' : 'badge-neu';
+                const confidence = (typeof f.confidence === 'number') ? f.confidence.toFixed(1) + '%' : '-';
+                return `
+                <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
+                    <td class="p-4 font-semibold text-white/90">${f.name || '-'}</td>
+                    <td class="p-4 text-blue-200/70">${f.service || '-'}</td>
+                    <td class="p-4 text-blue-200/50 max-w-table-cell truncate">${f.text}</td>
+                    <td class="p-4"><span class="badge ${badgeClass}">${f.sentiment}</span></td>
+                    <td class="p-4 text-blue-200/70">${confidence}</td>
+                    <td class="p-4"><span class="badge bg-white/10 text-white border border-white/20">${f.emotion}</span></td>
+                </tr>`;
+            }).join('');
+        }
+
+    } catch (e) {
+        console.error("Error fetching dashboard data:", e);
+        document.getElementById('health-status').innerHTML = `<span class="text-red-400">Couldn't load data</span>`;
+        const tbody = document.getElementById('recentTable');
+        if (!tbody.innerHTML.trim()) {
+            tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-red-400/70">Couldn't load recent interactions. <a href="#" onclick="fetchDashboardData();return false;" class="underline">Retry</a></td></tr>`;
+        }
     }
-});
-</script>
-<script>
-const feedbackBox = document.getElementById("feedbackBox");
+}
+
+// Live Sentiment Typing
+const fText = document.getElementById("f-text");
 const liveSentiment = document.getElementById("liveSentiment");
 
-feedbackBox.addEventListener("input", async () => {
+// Debounced + abortable: typing fast used to fire one POST per keystroke,
+// and slow responses could race and overwrite a newer keystroke's result.
+let liveSentimentTimer = null;
+let liveSentimentAbort = null;
 
-    const text = feedbackBox.value;
+fText.addEventListener("input", () => {
+    const text = fText.value;
+    clearTimeout(liveSentimentTimer);
 
-    if(text.length < 3){
-        liveSentiment.innerText = "";
+    if (text.length < 3) {
+        if (liveSentimentAbort) liveSentimentAbort.abort();
+        liveSentiment.innerText = "Waiting...";
+        liveSentiment.className = "text-sm font-bold text-gray-500";
         return;
     }
 
-    try {
-        const res = await fetch("/live_sentiment", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            credentials: "include",  
-            body: JSON.stringify({ text: text })
-        });
+    liveSentimentTimer = setTimeout(async () => {
+        if (liveSentimentAbort) liveSentimentAbort.abort();
+        liveSentimentAbort = new AbortController();
 
-        const data = await res.json();
+        try {
+            const res = await fetch("/live_sentiment", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text }),
+                signal: liveSentimentAbort.signal
+            });
+            const data = await res.json();
+            const color = data.sentiment === "Positive" ? "text-secondary" : data.sentiment === "Negative" ? "text-red-400" : "text-primary";
+            const confidence = (typeof data.confidence === 'number') ? ` &middot; ${data.confidence.toFixed(1)}% confidence` : '';
+            liveSentiment.innerHTML = `<span class="${color} drop-shadow-glow-current">${data.sentiment} (${data.emotion})${confidence}</span>`;
+        } catch (e) {
+            // AbortError is expected when a newer keystroke supersedes this request
+        }
+    }, 350);
+});
 
-        liveSentiment.innerHTML = `
-            <span class="${
-                data.sentiment === "Positive" ? "text-green-400" :
-                data.sentiment === "Negative" ? "text-red-400" :
-                "text-yellow-400"
-            }">
-            ${data.sentiment}
-            </span>
-        `;
-
-    } catch (error) {
-        console.error(error);  
-        liveSentiment.innerText = "Error...";
+// Name/phone validation mirrors the server-side rules in app.py
+// (is_valid_name/is_valid_phone) - checked here first for instant feedback,
+// but the server re-checks independently since client-side checks can
+// always be bypassed.
+function validateName(name) {
+    name = (name || '').trim();
+    if (!name) return null; // optional - defaults to "Anonymous" server-side
+    if (!/^[A-Za-z ]+$/.test(name)) {
+        return "Name must be letters only - no numbers or symbols";
     }
+    const letters = name.toLowerCase().replace(/ /g, '');
+    const counts = {};
+    for (const ch of letters) counts[ch] = (counts[ch] || 0) + 1;
+    if (Object.values(counts).some(c => c > 3)) {
+        return "Name has a letter repeated too many times";
+    }
+    const words = name.toLowerCase().split(/\s+/);
+    if (new Set(words).size !== words.length) {
+        return "Name has a repeated word";
+    }
+    return null;
+}
 
+function validatePhone(phone) {
+    phone = (phone || '').trim();
+    if (!phone) return null; // optional
+    if (!/^\d{10}$/.test(phone)) {
+        return "Phone must be exactly 10 digits";
+    }
+    return null;
+}
+
+// Live validation feedback as you type - mirrors the live sentiment
+// preview on the feedback textarea, so invalid name/phone show an error
+// immediately instead of only surfacing on submit.
+function wireLiveValidation(inputEl, errorEl, validateFn) {
+    inputEl.addEventListener('input', () => {
+        const error = validateFn(inputEl.value);
+        errorEl.textContent = error || '';
+        errorEl.classList.toggle('hidden', !error);
+        inputEl.classList.toggle('is-invalid', !!error);
+    });
+}
+wireLiveValidation(document.getElementById('f-name'), document.getElementById('f-name-error'), validateName);
+wireLiveValidation(document.getElementById('f-phone'), document.getElementById('f-phone-error'), validatePhone);
+
+// Submit Feedback
+document.getElementById('feedbackForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+
+    const text = fText.value;
+    const name = document.getElementById('f-name').value;
+    const phone = document.getElementById('f-phone').value;
+    const service = document.getElementById('f-service').value;
+
+    if (!text) { alert("Feedback text required"); return; }
+
+    const nameErrorEl = document.getElementById('f-name-error');
+    const phoneErrorEl = document.getElementById('f-phone-error');
+    const nameError = validateName(name);
+    const phoneError = validatePhone(phone);
+    nameErrorEl.textContent = nameError || '';
+    nameErrorEl.classList.toggle('hidden', !nameError);
+    document.getElementById('f-name').classList.toggle('is-invalid', !!nameError);
+    phoneErrorEl.textContent = phoneError || '';
+    phoneErrorEl.classList.toggle('hidden', !phoneError);
+    document.getElementById('f-phone').classList.toggle('is-invalid', !!phoneError);
+    if (nameError || phoneError) return;
+
+    btn.innerText = "Processing...";
+
+    try {
+        const res = await fetch("/api/submit_feedback", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text, name, phone, service })
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+            alert(data.error || "Error submitting");
+            btn.innerText = "Submit to Core";
+            return;
+        }
+
+        fText.value = '';
+        document.getElementById('f-name').value = '';
+        document.getElementById('f-phone').value = '';
+        document.getElementById('f-service').value = '';
+        document.getElementById('f-name').classList.remove('is-invalid');
+        document.getElementById('f-phone').classList.remove('is-invalid');
+        nameErrorEl.classList.add('hidden');
+        phoneErrorEl.classList.add('hidden');
+        liveSentiment.innerText = "Waiting...";
+        liveSentiment.className = "text-sm font-bold text-gray-500";
+
+        // Refresh Data without reload
+        await fetchDashboardData();
+
+    } catch (e) { alert("Error submitting"); }
+    btn.innerText = "Submit to Core";
+});
+
+// Init
+window.addEventListener('load', () => {
+    initCharts();
+    fetchDashboardData();
+
+    // Auto-refresh every 30s, but only while the tab is actually visible -
+    // a dashboard left open in a background tab was polling for no reason.
+    let pollId = setInterval(fetchDashboardData, 30000);
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            clearInterval(pollId);
+        } else {
+            fetchDashboardData();
+            pollId = setInterval(fetchDashboardData, 30000);
+        }
+    });
 });
 </script>
 

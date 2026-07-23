@@ -1,27 +1,44 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2 class="text-3xl font-bold mb-6">Edit Customer</h2>
+<div class="dashboard-header mb-6">
+    <h1 class="page-title">Edit Customer Feedback</h1>
+    <p class="page-subtitle">Update record information</p>
+</div>
 
-<form method="POST" class="space-y-4">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div class="tilt-card glass p-6" style="max-width: 600px;">
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-    <input type="text" name="name" value="{{ feedback.name }}"
-        class="w-full p-3 bg-gray-800 rounded">
+        <div class="form-group">
+            <label class="form-label">Name</label>
+            <input type="text" name="name" value="{{ feedback.name }}" class="input-field" pattern="[A-Za-z ]+" title="Letters only">
+        </div>
 
-    <input type="text" name="phone" value="{{ feedback.phone }}"
-        class="w-full p-3 bg-gray-800 rounded">
+        <div class="form-group">
+            <label class="form-label">Phone</label>
+            <input type="text" name="phone" value="{{ feedback.phone }}" class="input-field" inputmode="numeric" pattern="\d{10}" maxlength="10" title="10 digit phone number">
+        </div>
 
-    <input type="text" name="service" value="{{ feedback.service }}"
-        class="w-full p-3 bg-gray-800 rounded">
+        <div class="form-group">
+            <label class="form-label">Service</label>
+            <input type="text" name="service" value="{{ feedback.service }}" class="input-field">
+        </div>
 
-    <textarea name="text"
-        class="w-full p-3 bg-gray-800 rounded">{{ feedback.text }}</textarea>
+        <div class="form-group">
+            <label class="form-label">Customer Feedback</label>
+            <textarea name="text" class="input-field" rows="6">{{ feedback.text }}</textarea>
+        </div>
 
-    <button class="bg-blue-500 px-5 py-2 rounded">
-        Update
-    </button>
-
-</form>
+        <div style="display: flex; gap: 16px; margin-top: 32px;">
+            <button type="submit" class="btn-primary" style="flex: 1; justify-content: center;">
+                <i data-lucide="save"></i> Update Record
+            </button>
+            <a href="/customers" class="btn-primary" style="background-color: var(--bg-hover); color: var(--text-primary); flex: 1; justify-content: center;">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
 
 {% endblock %}

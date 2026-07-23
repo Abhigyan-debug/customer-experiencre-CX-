@@ -1,125 +1,90 @@
 {% extends "base.html" %}
+{% import "_macros.html" as macros %}
 {% block content %}
 
-<style>
-/* ✨ Animations */
-.fade-in {
-    animation: fadeIn 0.8s ease-in-out;
-}
-@keyframes fadeIn {
-    from {opacity:0; transform: translateY(20px);}
-    to {opacity:1; transform: translateY(0);}
-}
+<div class="dashboard-header mb-6">
+    <h1 class="page-title">Admin Dashboard</h1>
+    <p class="page-subtitle">Manage users and global platform data</p>
+</div>
 
-.glow-card:hover {
-    box-shadow: 0 0 25px rgba(168,85,247,0.5);
-    transform: translateY(-5px) scale(1.02);
-}
+<!-- Stats -->
+<div class="stats-grid">
+    {{ macros.kpi_card("Total Users", value=total_users, color="text-primary", glow="from-primary/20 to-transparent", icon="users-round") }}
+    {{ macros.kpi_card("Total Feedback", value=total_feedback, color="text-white", glow="from-white/10 to-transparent", icon="message-square-text") }}
+    {{ macros.kpi_card("Total Positive", value=total_positive, color="text-secondary", glow="from-secondary/20 to-transparent", icon="thumbs-up") }}
+</div>
 
-.delete-btn:hover {
-    background: rgba(255,0,0,0.4);
-    transform: scale(1.05);
-}
-</style>
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
 
-<div class="glass p-6 fade-in">
-
-    <!-- Title -->
-    <h2 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 mb-8 animate-pulse">
-        👑 Admin Dashboard
-    </h2>
-
-    <!-- STATS -->
-    <div class="grid grid-cols-3 gap-4 mb-6">
-
-        <div class="glass p-4 text-center glow-card transition">
-            <p class="text-sm text-gray-300">Total Users</p>
-            <h2 class="text-3xl font-bold">{{ users|length }}</h2>
+    <!-- Users List -->
+    <div class="tilt-card glass p-6" style="height: fit-content; max-height: 600px; overflow-y: auto;">
+        <h3 class="text-primary mb-4" style="font-size: 1.125rem; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="users-round"></i> Users
+        </h3>
+        
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            {% for u in users %}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background-color: var(--bg-hover); border-radius: 8px; gap: 12px; flex-wrap: wrap;">
+                <span style="font-weight: 500;">{{ u.username }}</span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="badge" style="background-color: {% if u.role == 'admin' %}rgba(0, 208, 132, 0.1){% else %}rgba(0, 153, 255, 0.1){% endif %}; color: {% if u.role == 'admin' %}var(--secondary-color){% else %}var(--primary-color){% endif %};">
+                        {{ u.role|title }}
+                    </span>
+                    {% if u.id != current_user.id %}
+                    <form method="POST" action="{{ url_for('set_role', user_id=u.id) }}"
+                          onsubmit="return confirm('{% if u.role == 'admin' %}Revoke admin access from{% else %}Grant admin access to{% endif %} {{ u.username }}?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="role" value="{% if u.role == 'admin' %}user{% else %}admin{% endif %}">
+                        <button type="submit" class="btn-secondary" style="padding: 4px 10px; font-size: 0.75rem;">
+                            {% if u.role == 'admin' %}Revoke Admin{% else %}Make Admin{% endif %}
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
         </div>
-
-        <div class="glass p-4 text-center glow-card transition">
-            <p class="text-sm text-gray-300">Total Feedback</p>
-            <h2 class="text-3xl font-bold">{{ feedbacks|length }}</h2>
-        </div>
-
-        <div class="glass p-4 text-center glow-card transition">
-            <p class="text-sm text-gray-300">Positive</p>
-            <h2 class="text-3xl font-bold text-green-400">
-                {{ feedbacks|selectattr('sentiment','equalto','Positive')|list|length }}
-            </h2>
-        </div>
-
     </div>
 
-    <!-- GRID -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-
-        <!-- USERS -->
-        <div class="glass p-6 rounded-2xl shadow-xl glow-card transition border border-blue-400/30">
-            <h3 class="mb-4 text-xl font-semibold text-blue-400">👤 Users</h3>
-
-            <div class="space-y-3 max-h-80 overflow-y-auto pr-2">
-                {% for u in users %}
-                <div class="flex justify-between items-center bg-white/5 p-3 rounded-lg hover:bg-white/10 transition">
-                    <span>{{ u.username }}</span>
-                    <span class="text-xs px-3 py-1 rounded-full 
-                        {% if u.role == 'admin' %}
-                            bg-purple-500/30 text-purple-300
-                        {% else %}
-                            bg-blue-500/30 text-blue-300
-                        {% endif %}
-                    ">
-                        {{ u.role }}
-                    </span>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-
-        <!-- FEEDBACK -->
-        <div class="glass p-6 rounded-2xl shadow-xl border border-green-400/30 max-h-[500px] overflow-y-auto glow-card transition">
-            <h3 class="mb-4 text-xl font-semibold text-green-400">💬 Feedback</h3>
-
+    <!-- Feedback Feed -->
+    <div class="tilt-card glass p-6" style="max-height: 600px; overflow-y: auto;">
+        <h3 class="text-success mb-4" style="font-size: 1.125rem; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="message-square-text"></i> Global Feedback
+        </h3>
+        
+        <div style="display: flex; flex-direction: column; gap: 16px;">
             {% for f in feedbacks %}
-            <div class="mb-4 p-3 bg-white/5 rounded-lg fade-in hover:bg-white/10 transition">
+            <div style="padding: 16px; border: 1px solid var(--border-color); border-radius: 8px; position: relative;">
+                
+                <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 12px; font-size: 0.875rem;">
+                    <div><span class="text-secondary">Name:</span> <b>{{ f.name or 'N/A' }}</b></div>
+                    <div><span class="text-secondary">Phone:</span> <b>{{ f.phone or 'N/A' }}</b></div>
+                    <div><span class="text-secondary">Service:</span> <b>{{ f.service or 'N/A' }}</b></div>
+                </div>
 
-                <p><b>Name:</b> {{ f.name or 'N/A' }}</p>
-                <p><b>Phone:</b> {{ f.phone or 'N/A' }}</p>
-                <p><b>Service:</b> {{ f.service or 'N/A' }}</p>
+                <p style="margin-bottom: 16px; line-height: 1.6;">{{ f.text }}</p>
 
-                <p class="mt-2"><b>Message:</b> {{ f.text }}</p>
-
-                <div class="mt-2 flex gap-2">
-                    <span class="text-xs px-2 py-1 rounded
-                        {% if f.sentiment == 'Positive' %}
-                            bg-green-500/30 text-green-300
-                        {% elif f.sentiment == 'Negative' %}
-                            bg-red-500/30 text-red-300
-                        {% else %}
-                            bg-yellow-500/30 text-yellow-300
-                        {% endif %}
-                    ">
+                <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                    <span class="badge {% if f.sentiment == 'Positive' %}badge-success{% elif f.sentiment == 'Negative' %}badge-danger{% else %}badge-warning{% endif %}">
                         {{ f.sentiment }}
                     </span>
-
-                    <span class="text-xs px-2 py-1 bg-purple-500/20 rounded">
+                    <span class="badge" style="background-color: var(--bg-hover);">
                         {{ f.emotion or 'unknown' }}
                     </span>
                 </div>
 
-                <!-- DELETE -->
-                <form method="POST" action="/delete_feedback/{{ f.id }}">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button class="mt-2 text-xs px-3 py-1 bg-red-500/20 rounded delete-btn transition">
-                        🗑 Delete
-                    </button>
-                </form>
-
+                <div style="position: absolute; top: 16px; right: 16px;">
+                    <form method="POST" action="/delete_feedback/{{ f.id }}" onsubmit="return confirm('Are you sure you want to delete this feedback?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" style="color: var(--text-secondary); padding: 4px; border-radius: 4px; transition: color 0.2s;" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--text-secondary)'">
+                            <i data-lucide="trash-2" style="width: 18px; height: 18px;"></i>
+                        </button>
+                    </form>
+                </div>
+                
             </div>
             {% endfor %}
-
         </div>
-
     </div>
 
 </div>

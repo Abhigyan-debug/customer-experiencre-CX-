@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PulseCX Executive Report</title>
+    <style>
+        @page {
+            margin: 0;
+            size: A4;
+        }
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            color: #2d3748;
+            margin: 0;
+            padding: 0;
+            background-color: #ffffff;
+            font-size: 12px;
+        }
+        .header {
+            background-color: #0B1220;
+            color: #ffffff;
+            padding: 40px;
+            text-align: left;
+            border-bottom: 5px solid #0099FF;
+        }
+        .header .brand {
+            font-size: 14px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        .header .brand .accent { color: #0099FF; }
+        .header h1 {
+            margin: 0;
+            font-size: 26px;
+            letter-spacing: 1px;
+        }
+        .header p {
+            margin: 5px 0 0;
+            opacity: 0.75;
+            font-size: 13px;
+        }
+        .content {
+            padding: 32px 40px;
+        }
+        .section {
+            margin-bottom: 26px;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #0099FF;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 5px;
+        }
+        .summary-box {
+            background-color: #f8fafc;
+            border-radius: 8px;
+            padding: 18px;
+            border-left: 4px solid #0099FF;
+            line-height: 1.6;
+        }
+        .stats-grid {
+            display: table;
+            width: 100%;
+            margin-top: 16px;
+        }
+        .stat-item {
+            display: table-cell;
+            width: 20%;
+            text-align: center;
+            padding: 16px 8px;
+            background-color: #f1f5f9;
+            border-right: 4px solid #ffffff;
+        }
+        .stat-value {
+            display: block;
+            font-size: 20px;
+            font-weight: bold;
+            color: #1a202c;
+        }
+        .stat-label {
+            font-size: 10px;
+            color: #718096;
+            text-transform: uppercase;
+        }
+        .two-col {
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+        }
+        .two-col .col {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+            padding-right: 16px;
+        }
+        .two-col .col + .col {
+            padding-right: 0;
+            padding-left: 16px;
+        }
+        .list-item {
+            margin-bottom: 8px;
+            padding-left: 4px;
+        }
+        .quote-box {
+            background-color: #f8fafc;
+            border-radius: 6px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            border-left: 3px solid #cbd5e1;
+        }
+        .quote-box.negative { border-left-color: #ef4444; }
+        .quote-box.positive { border-left-color: #00D084; }
+        .quote-text { font-style: italic; color: #2d3748; }
+        .quote-meta { font-size: 10px; color: #a0aec0; margin-top: 4px; }
+        .chart-wrap { text-align: center; margin-top: 10px; }
+        .chart-wrap img { width: 260px; height: 260px; }
+        .footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            padding: 16px 40px;
+            font-size: 9px;
+            color: #a0aec0;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+        }
+        .danger { color: #ef4444; }
+        .warning { color: #f59e0b; }
+        .success { color: #00D084; }
+        ul { padding-left: 18px; margin: 0; }
+        li { margin-bottom: 6px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="brand">Pulse<span class="accent">CX</span></div>
+        <h1>Executive Insight Report</h1>
+        <p>Generated on {{ date }} | Confidential Business Intelligence</p>
+    </div>
+
+    <div class="content">
+
+        <div class="section">
+            <div class="section-title">Performance Overview</div>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-value">{{ total }}</span>
+                    <span class="stat-label">Total Feedback</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" style="color: #00D084;">{{ positive }}</span>
+                    <span class="stat-label">Positive</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" style="color: #ef4444;">{{ negative }}</span>
+                    <span class="stat-label">Negative</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" style="color: #f59e0b;">{{ neutral }}</span>
+                    <span class="stat-label">Neutral</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" style="color: #0099FF;">{{ csat }}%</span>
+                    <span class="stat-label">CSAT Score</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Executive Summary</div>
+            <div class="summary-box">{{ insight.summary }}</div>
+        </div>
+
+        <div class="section">
+            <div class="two-col">
+                <div class="col">
+                    <div class="section-title" style="font-size: 13px;">Sentiment Overview</div>
+                    <div class="chart-wrap">
+                        {% if chart_b64 %}
+                        <img src="data:image/png;base64,{{ chart_b64 }}" alt="Sentiment distribution chart">
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="section-title" style="font-size: 13px;">Emotion Analysis</div>
+                    <ul>
+                        {% for name, count in emotions.items() %}
+                        <li>{{ name }}: <b>{{ count }}</b></li>
+                        {% else %}
+                        <li>No emotion data available.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="two-col">
+                <div class="col">
+                    <div class="section-title" style="font-size: 13px;">Trend Analysis</div>
+                    <p>{{ insight.trend_analysis }}</p>
+                </div>
+                <div class="col">
+                    <div class="section-title" style="font-size: 13px;">Predictive Insight</div>
+                    <p>{{ insight.predictive_insights }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title danger">Top Issues (Critical Retention Risks)</div>
+            <ul>
+            {% for p in insight.pain_points %}
+                <li class="list-item">{{ p }}</li>
+            {% else %}
+                <li class="list-item">No critical issues detected.</li>
+            {% endfor %}
+            </ul>
+            {% for f in top_issues %}
+            <div class="quote-box negative">
+                <div class="quote-text">"{{ f.text }}"</div>
+                <div class="quote-meta">&mdash; {{ f.name }}{% if f.service %} &middot; {{ f.service }}{% endif %}</div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="section">
+            <div class="section-title success">Top Positive Feedback</div>
+            <ul>
+            {% for h in insight.positive_highlights %}
+                <li class="list-item">{{ h }}</li>
+            {% else %}
+                <li class="list-item">Not enough positive feedback yet.</li>
+            {% endfor %}
+            </ul>
+            {% for f in top_positive %}
+            <div class="quote-box positive">
+                <div class="quote-text">"{{ f.text }}"</div>
+                <div class="quote-meta">&mdash; {{ f.name }}{% if f.service %} &middot; {{ f.service }}{% endif %}</div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="section">
+            <div class="section-title warning">AI Recommendations &amp; Action Items</div>
+            <div class="two-col">
+                <div class="col">
+                    <ul>
+                    {% for r in insight.recommendations %}
+                        <li class="list-item">{{ r }}</li>
+                    {% else %}
+                        <li class="list-item">Keep monitoring feedback.</li>
+                    {% endfor %}
+                    </ul>
+                </div>
+                <div class="col">
+                    <ul>
+                    {% for a in insight.action_items %}
+                        <li class="list-item">{{ a }}</li>
+                    {% else %}
+                        <li class="list-item">No action items right now.</li>
+                    {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        {% if top_services %}
+        <div class="section">
+            <div class="section-title">Business Insights &mdash; Top Services by Volume</div>
+            <ul>
+            {% for name, count in top_services.items() %}
+                <li class="list-item">{{ name }}: <b>{{ count }}</b> feedback item(s)</li>
+            {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <div class="footer">
+        &copy; {{ date[-4:] }} PulseCX Analytics. All rights reserved. Generated by the PulseCX AI Insights Engine.
+    </div>
+</body>
+</html>

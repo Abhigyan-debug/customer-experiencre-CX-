@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Apply the saved theme before first paint -->
+    <script>
+    (function () {
+        try {
+            var t = localStorage.getItem('pulsecx-theme');
+            document.documentElement.dataset.theme = (t === 'light') ? 'light' : 'dark';
+        } catch (e) {
+            document.documentElement.dataset.theme = 'dark';
+        }
+    })();
+    </script>
+
+    <title>{{ code }} - PulseCX</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="{{ url_for('static', filename='vendor/lucide.min.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/theme.js') }}" defer></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .error-wrap {
+            display: flex;
+            min-height: 100vh;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--bg-main);
+            text-align: center;
+            padding: 24px;
+        }
+        .error-code {
+            font-size: 6rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            line-height: 1;
+            text-shadow: 0 0 30px var(--primary-glow);
+        }
+        .error-message {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin: 16px 0 32px;
+        }
+    </style>
+</head>
+<body>
+    <button type="button" data-theme-toggle class="theme-toggle-fab" aria-label="Switch to light mode">
+        <i data-lucide="moon"></i>
+    </button>
+    <div class="error-wrap">
+        <div>
+            <div class="error-code">{{ code }}</div>
+            <p class="error-message">{{ message }}</p>
+            <a href="/" class="btn-primary" style="padding: 12px 28px;">Back to safety</a>
+        </div>
+    </div>
+    <script>document.addEventListener('DOMContentLoaded', function () { lucide.createIcons(); });</script>
+</body>
+</html>

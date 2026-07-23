@@ -1,188 +1,157 @@
 {% extends "base.html" %}
+{% import "_macros.html" as macros %}
 {% block content %}
 
-<!-- 🔥 HEADER -->
-<div class="flex justify-between items-center mb-6">
-    <h2 class="text-3xl font-semibold text-white flex items-center gap-2">
-        Customers 👥
-    </h2>
+<div class="dashboard-header mb-6">
+    <h1 class="page-title">Customers</h1>
+    <p class="page-subtitle">Search, filter and manage every recorded customer interaction</p>
 </div>
 
 <!-- 📊 TOP STATS -->
-<div class="grid grid-cols-3 gap-4 mb-6">
-    <div class="stat-card text-green-400">
-        <p class="text-xs text-gray-400">Positive</p>
-        <p class="text-xl font-bold">{{ positive }}</p>
-    </div>
-    <div class="stat-card text-red-400">
-        <p class="text-xs text-gray-400">Negative</p>
-        <p class="text-xl font-bold">{{ negative }}</p>
-    </div>
-    <div class="stat-card text-yellow-400">
-        <p class="text-xs text-gray-400">Neutral</p>
-        <p class="text-xl font-bold">{{ neutral }}</p>
-    </div>
+<div class="stats-grid">
+    {{ macros.kpi_card("Positive", value=positive, color="text-secondary", glow="from-secondary/20 to-transparent", icon="thumbs-up") }}
+    {{ macros.kpi_card("Negative", value=negative, color="text-red-400", glow="from-red-500/20 to-transparent", icon="thumbs-down") }}
+    {{ macros.kpi_card("Neutral", value=neutral, color="text-warning", glow="from-primary/10 to-transparent", icon="minus-circle") }}
 </div>
 
 <!-- 🔍 SEARCH + FILTER -->
-<form method="GET" class="flex flex-wrap gap-3 mb-6">
+<div class="tilt-card glass p-6 mb-6">
+    <form method="GET" style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
 
-    <input type="text" name="search" value="{{ request.args.get('search','') }}"
-        placeholder="Search customers..."
-        class="input w-72">
+        <div class="form-group" style="flex: 1; min-width: 220px; margin-bottom: 0;">
+            <label class="form-label">Search</label>
+            <input type="text" name="search" value="{{ search }}"
+                placeholder="Search by name or service..."
+                class="input-field">
+        </div>
 
-    <!-- FILTER -->
-    <select name="sentiment" class="input w-40">
-        <option value="">All Sentiment</option>
-        <option>Positive</option>
-        <option>Negative</option>
-        <option>Neutral</option>
-    </select>
+        <div class="form-group" style="min-width: 160px; margin-bottom: 0;">
+            <label class="form-label">Sentiment</label>
+            <select name="sentiment" data-custom-select class="input-field">
+                <option value="">All Sentiment</option>
+                <option {% if selected_sentiment=='Positive' %}selected{% endif %}>Positive</option>
+                <option {% if selected_sentiment=='Negative' %}selected{% endif %}>Negative</option>
+                <option {% if selected_sentiment=='Neutral' %}selected{% endif %}>Neutral</option>
+            </select>
+        </div>
 
-    <select name="service" class="input w-40">
-        <option value="">All Services</option>
-        <option>App</option>
-        <option>Website</option>
-        <option>Support</option>
-    </select>
+        <div class="form-group" style="min-width: 160px; margin-bottom: 0;">
+            <label class="form-label">Service</label>
+            <select name="service" data-custom-select class="input-field">
+                <option value="">All Services</option>
+                {% for svc in service_options %}
+                <option value="{{ svc }}" {% if selected_service==svc %}selected{% endif %}>{{ svc }}</option>
+                {% endfor %}
+            </select>
+        </div>
 
-    <button class="btn-primary">
-        🔍 Search
-    </button>
-</form>
+        <button class="btn-primary">
+            <i data-lucide="search" style="width: 16px; height: 16px;"></i> Search
+        </button>
+        {% if search or selected_sentiment or selected_service %}
+        <a href="/customers" class="btn-secondary">Clear</a>
+        {% endif %}
+    </form>
+</div>
 
 <!-- 📋 TABLE -->
-<div class="table-card">
+<div class="data-table-container">
+    <table class="data-table">
 
-    <table class="w-full text-left">
-
-        <thead class="text-xs text-gray-400 border-b border-gray-700">
+        <thead>
             <tr>
-                <th class="p-3">Name</th>
-                <th class="p-3">Phone</th>
-                <th class="p-3">Service</th>
-                <th class="p-3">Feedback</th>
-                <th class="p-3">Sentiment</th>
-                <th class="p-3">Emotion</th>
-                <th class="p-3 text-center">Actions</th>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Service</th>
+                <th>Feedback</th>
+                <th>Sentiment</th>
+                <th>Emotion</th>
+                <th style="text-align: center;">Actions</th>
             </tr>
         </thead>
 
         <tbody>
         {% for f in feedbacks.items %}
-        <tr class="border-b border-gray-800 hover:bg-white/5 transition">
+        <tr>
 
-            <td class="p-3 font-medium">{{ f.name }}</td>
-            <td class="p-3 text-gray-400">{{ f.phone }}</td>
-            <td class="p-3 text-gray-400">{{ f.service }}</td>
-            <td class="p-3 text-gray-500 max-w-xs truncate">{{ f.text }}</td>
+            <td style="font-weight: 600;">{{ f.name }}</td>
+            <td class="text-secondary">{{ f.phone }}</td>
+            <td class="text-secondary">{{ f.service }}</td>
+            <td class="text-secondary" style="max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ f.text }}</td>
 
-            <td class="p-3">
+            <td>
                 <span class="badge
-                {% if f.sentiment=='Positive' %}badge-green
-                {% elif f.sentiment=='Negative' %}badge-red
-                {% else %}badge-yellow{% endif %}">
+                {% if f.sentiment=='Positive' %}badge-success
+                {% elif f.sentiment=='Negative' %}badge-danger
+                {% else %}badge-warning{% endif %}">
                 {{ f.sentiment }}
                 </span>
             </td>
 
-            <td class="p-3">
+            <td>
                 <span class="badge
-                {% if f.emotion=='Happy' %}badge-green
-                {% elif f.emotion=='Sad' %}badge-blue
-                {% elif f.emotion=='Angry' %}badge-red
-                {% else %}badge-yellow{% endif %}">
+                {% if f.emotion=='Happy' %}badge-success
+                {% elif f.emotion=='Angry' %}badge-danger
+                {% else %}badge-warning{% endif %}">
                 {{ f.emotion }}
                 </span>
             </td>
 
-            <td class="p-3 flex justify-center gap-2">
-
-                <a href="/edit/{{ f.id }}" class="btn-sm btn-blue">Edit</a>
-
-                <a href="/delete/{{ f.id }}"
-                onclick="return confirm('Delete this record?')"
-                class="btn-sm btn-red">Delete</a>
-
+            <td>
+                <div style="display: flex; justify-content: center; gap: 8px;">
+                    <a href="/edit/{{ f.id }}" class="btn-secondary" style="padding: 6px 14px; font-size: 0.8rem;">
+                        <i data-lucide="pencil" style="width: 14px; height: 14px;"></i>
+                    </a>
+                    <form method="POST" action="/delete/{{ f.id }}" onsubmit="return confirm('Delete this record?')" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn-secondary text-danger" style="padding: 6px 14px; font-size: 0.8rem; border-color: rgba(239,68,68,0.3);">
+                            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                        </button>
+                    </form>
+                </div>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="7" style="text-align: center; padding: 48px; color: var(--text-secondary);">
+                {% if search or selected_sentiment or selected_service %}
+                    No records match your filters. <a href="/customers">Clear filters</a> to see everything.
+                {% else %}
+                    No customer records yet - submit feedback from the Dashboard to get started.
+                {% endif %}
             </td>
         </tr>
         {% endfor %}
         </tbody>
 
     </table>
-
 </div>
 
 <!-- 🔢 PAGINATION -->
-<div class="mt-6 flex justify-center items-center gap-4">
+<div class="mt-6 flex items-center justify-between" style="gap: 16px;">
+
+    {% set qs = {'search': search, 'sentiment': selected_sentiment, 'service': selected_service} %}
 
     {% if feedbacks.has_prev %}
-    <a href="?page={{ feedbacks.prev_num }}" class="btn-secondary">⬅ Prev</a>
+    <a href="{{ url_for('customers', page=feedbacks.prev_num, **qs) }}" class="btn-secondary">
+        <i data-lucide="chevron-left" style="width: 16px; height: 16px;"></i> Prev
+    </a>
+    {% else %}
+    <span></span>
     {% endif %}
 
-    <span class="text-gray-400 text-sm">
-        Page {{ feedbacks.page }} of {{ feedbacks.pages }}
+    <span class="text-secondary" style="font-size: 0.9rem;">
+        Page {{ feedbacks.page }} of {{ feedbacks.pages or 1 }} &middot; {{ feedbacks.total }} record{{ 's' if feedbacks.total != 1 else '' }}
     </span>
 
     {% if feedbacks.has_next %}
-    <a href="?page={{ feedbacks.next_num }}" class="btn-secondary">Next ➡</a>
+    <a href="{{ url_for('customers', page=feedbacks.next_num, **qs) }}" class="btn-secondary">
+        Next <i data-lucide="chevron-right" style="width: 16px; height: 16px;"></i>
+    </a>
+    {% else %}
+    <span></span>
     {% endif %}
 
 </div>
-
-<!-- 🔥 STYLES -->
-<style>
-.input{
-    padding:10px;
-    border-radius:8px;
-    background:#1f2937;
-    border:1px solid #374151;
-}
-
-.btn-primary{
-    background:linear-gradient(to right,#3b82f6,#8b5cf6);
-    padding:10px 16px;
-    border-radius:8px;
-}
-
-.btn-secondary{
-    background:#374151;
-    padding:8px 12px;
-    border-radius:8px;
-}
-
-.table-card{
-    background:rgba(255,255,255,0.05);
-    border-radius:12px;
-    padding:20px;
-    border:1px solid rgba(255,255,255,0.08);
-}
-
-.stat-card{
-    background:#111827;
-    padding:12px;
-    border-radius:10px;
-}
-
-.badge{
-    padding:4px 10px;
-    border-radius:999px;
-    font-size:12px;
-}
-
-.badge-green{background:rgba(34,197,94,0.2); color:#22c55e;}
-.badge-red{background:rgba(239,68,68,0.2); color:#ef4444;}
-.badge-yellow{background:rgba(234,179,8,0.2); color:#eab308;}
-.badge-blue{background:rgba(59,130,246,0.2); color:#3b82f6;}
-
-.btn-sm{
-    padding:4px 10px;
-    border-radius:6px;
-    font-size:12px;
-}
-
-.btn-blue{background:#2563eb;}
-.btn-red{background:#ef4444;}
-</style>
 
 {% endblock %}

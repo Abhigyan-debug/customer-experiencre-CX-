@@ -1,130 +1,227 @@
 {% extends "base.html" %}
+{% import "_macros.html" as macros %}
 {% block content %}
 
-<!-- 🔷 CLEAN HEADING -->
-<div class="mb-6">
-    <h2 class="text-3xl font-semibold text-white flex items-center gap-2">
-        Reports
-        <span class="text-gray-400 text-lg">📄</span>
-    </h2>
-    <p class="text-gray-400 text-sm mt-1">
-        Customer insights and sentiment analysis
-    </p>
+<div class="dashboard-header mb-6" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px;">
+    <div>
+        <h1 class="page-title">Reports</h1>
+        <p class="page-subtitle">AI-generated customer insights and sentiment analysis</p>
+    </div>
+    {% if insight.generated_at %}
+    <p class="text-secondary" style="font-size: 0.8rem;">Last generated {{ insight.generated_at.strftime('%b %d, %Y %H:%M UTC') }}</p>
+    {% endif %}
 </div>
 
-<div class="grid lg:grid-cols-2 gap-6 max-w-5xl">
+<!-- KPI Row -->
+<div class="stats-grid">
+    {{ macros.kpi_card("CSAT Score", value=csat, suffix="%", color="text-primary", glow="from-primary/20 to-transparent", icon="percent") }}
+    {{ macros.kpi_card("Positive", value=positive, color="text-secondary", glow="from-secondary/20 to-transparent", icon="thumbs-up") }}
+    {{ macros.kpi_card("Negative", value=negative, color="text-red-400", glow="from-red-500/20 to-transparent", icon="thumbs-down") }}
+    {{ macros.kpi_card("Neutral", value=neutral, color="text-warning", glow="from-primary/10 to-transparent", icon="minus-circle") }}
+</div>
 
-    <!-- 🤖 AI REPORT -->
-    <div class="p-5 bg-gray-800 rounded-xl shadow-md 
-    transition-all duration-300 ease-in-out 
-    hover:scale-[1.02] hover:shadow-xl hover:bg-gray-700/80">
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 24px;">
 
-        <h3 class="text-lg font-semibold text-yellow-400 mb-4">
-            AI Report
-        </h3>
+    <!-- AI Report -->
+    <div class="tilt-card glass p-6" style="position: relative; overflow: hidden;">
+        <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: radial-gradient(circle, rgba(0,212,182,0.1) 0%, transparent 70%); border-radius: 50%; pointer-events: none;"></div>
 
-        <!-- SUMMARY -->
-        <div class="mb-4">
-            <h4 class="text-green-400 text-sm font-medium mb-1">Summary</h4>
-            <p class="text-gray-300 text-sm leading-relaxed">
-                {{ insight.split('Problems:')[0].replace('Summary:', '') }}
-            </p>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+            <h3 class="text-primary" style="font-size: 1.25rem; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="file-text"></i> Executive AI Summary
+            </h3>
+            <div style="display: flex; gap: 12px;">
+                <button class="btn-secondary" style="padding: 6px 12px; font-size: 0.875rem;" onclick="window.print()">
+                    <i data-lucide="printer" style="width: 14px; height: 14px;"></i> Print
+                </button>
+                <a href="/refresh_ai" class="btn-primary" style="background-color: var(--bg-hover); color: var(--text-primary); padding: 6px 12px; font-size: 0.875rem;">
+                    <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Re-run Analysis
+                </a>
+            </div>
         </div>
 
-        <!-- PROBLEMS -->
-        <div class="mb-4">
-            <h4 class="text-red-400 text-sm font-medium mb-1">Problems</h4>
-            <ul class="text-gray-300 text-sm list-disc ml-5 space-y-1">
-                {% if 'Problems:' in insight %}
-                    {% set p = insight.split('Problems:')[1].split('Suggestions:')[0].split('\n') %}
-                    {% for line in p %}
-                        {% if line.strip() %}
-                            <li>{{ line.replace('-', '').strip() }}</li>
-                        {% endif %}
-                    {% endfor %}
-                {% endif %}
-            </ul>
+        <div style="display: grid; grid-template-columns: 1fr; gap: 24px;">
+            <!-- Summary -->
+            <div style="background: rgba(var(--overlay-rgb), 0.06); padding: 24px; border-radius: 12px; border-left: 4px solid var(--success);">
+                <h4 class="mb-3" style="font-size: 1rem; font-weight: 600; color: var(--text-primary);">Key Findings</h4>
+                <p class="text-secondary leading-relaxed text-sm">{{ insight.summary }}</p>
+            </div>
+
+            <!-- Trend & Predictive -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                <div style="background: rgba(0,153,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(0,153,255,0.2);">
+                    <h4 class="text-primary mb-3" style="font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="trending-up" style="width: 16px; height: 16px;"></i> Trend Analysis
+                    </h4>
+                    <p class="text-secondary text-sm" style="line-height: 1.6;">{{ insight.trend_analysis }}</p>
+                </div>
+                <div style="background: rgba(0,208,132,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(0,208,132,0.2);">
+                    <h4 class="text-success mb-3" style="font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="sparkles" style="width: 16px; height: 16px;"></i> Predictive Insight
+                    </h4>
+                    <p class="text-secondary text-sm" style="line-height: 1.6;">{{ insight.predictive_insights }}</p>
+                </div>
+            </div>
+
+            <!-- Pain Points & Highlights -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                <div style="background: rgba(239, 68, 68, 0.05); padding: 24px; border-radius: 12px; border: 1px solid rgba(239, 68, 68, 0.2);">
+                    <h4 class="text-danger mb-4" style="font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="alert-triangle" style="width: 18px; height: 18px;"></i> Top Pain Points
+                    </h4>
+                    <ul class="text-secondary" style="padding-left: 20px; list-style-type: disc; line-height: 1.6; font-size: 0.9rem;">
+                        {% for p in insight.pain_points %}
+                            <li>{{ p }}</li>
+                        {% else %}
+                            <li>No critical issues detected.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div style="background: rgba(0, 208, 132, 0.05); padding: 24px; border-radius: 12px; border: 1px solid rgba(0, 208, 132, 0.2);">
+                    <h4 class="text-success mb-4" style="font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="thumbs-up" style="width: 18px; height: 18px;"></i> Positive Highlights
+                    </h4>
+                    <ul class="text-secondary" style="padding-left: 20px; list-style-type: disc; line-height: 1.6; font-size: 0.9rem;">
+                        {% for h in insight.positive_highlights %}
+                            <li>{{ h }}</li>
+                        {% else %}
+                            <li>Not enough positive feedback yet.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Recommendations & Action Items -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                <div style="background: rgba(234, 179, 8, 0.05); padding: 24px; border-radius: 12px; border: 1px solid rgba(234, 179, 8, 0.2);">
+                    <h4 class="text-warning mb-4" style="font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="lightbulb" style="width: 18px; height: 18px;"></i> Business Recommendations
+                    </h4>
+                    <ul class="text-secondary" style="padding-left: 20px; list-style-type: disc; line-height: 1.6; font-size: 0.9rem;">
+                        {% for r in insight.recommendations %}
+                            <li>{{ r }}</li>
+                        {% else %}
+                            <li>Keep monitoring feedback.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div style="background: rgba(var(--overlay-rgb), 0.03); padding: 24px; border-radius: 12px; border: 1px solid var(--border-color);">
+                    <h4 class="mb-4" style="font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 8px; color: var(--text-primary);">
+                        <i data-lucide="list-checks" style="width: 18px; height: 18px;"></i> Action Items
+                    </h4>
+                    <ul class="text-secondary" style="padding-left: 20px; list-style-type: disc; line-height: 1.6; font-size: 0.9rem;">
+                        {% for a in insight.action_items %}
+                            <li>{{ a }}</li>
+                        {% else %}
+                            <li>No action items right now.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
         </div>
 
-        <!-- SUGGESTIONS -->
-        <div>
-            <h4 class="text-yellow-400 text-sm font-medium mb-1">Suggestions</h4>
-            <ul class="text-gray-300 text-sm list-disc ml-5 space-y-1">
-                {% if 'Suggestions:' in insight %}
-                    {% set s = insight.split('Suggestions:')[1].split('\n') %}
-                    {% for line in s %}
-                        {% if line.strip() %}
-                            <li>{{ line.replace('-', '').strip() }}</li>
-                        {% endif %}
-                    {% endfor %}
-                {% endif %}
-            </ul>
-        </div>
-        <a href="/refresh_ai">
-    <button class="mt-2 w-full bg-gray-600 hover:bg-gray-700 py-2 rounded-lg text-white text-sm">
-        🔄 Refresh AI
-    </button>
-</a>
-
-        <!-- BUTTON -->
-        <a href="/download_report">
-            <button class="mt-5 w-full bg-green-500 hover:bg-green-600 py-2 rounded-lg text-white text-sm font-medium
-            transition transform hover:scale-105">
-                Download PDF
+        <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border-color); display: flex; gap: 16px; flex-wrap: wrap;">
+            <a href="/download_report" class="btn-primary" style="background-color: var(--success); flex: 1; min-width: 200px; justify-content: center;">
+                <i data-lucide="download"></i> Download Full PDF
+            </a>
+            <button class="btn-secondary" style="flex: 1; min-width: 200px;" onclick="window.print()">
+                <i data-lucide="share-2"></i> Share with Team
             </button>
-        </a>
-
+        </div>
     </div>
 
-    <!-- 📊 GRAPH CARD -->
-    <div class="p-5 bg-gray-800 rounded-xl shadow-md flex flex-col items-center
-    transition-all duration-300 ease-in-out 
-    hover:scale-[1.02] hover:shadow-xl hover:bg-gray-700/80">
+    <!-- Right Column -->
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+        <!-- Sentiment Distribution -->
+        <div class="tilt-card glass p-6" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+            <h3 class="text-primary mb-6" style="font-size: 1.125rem;">Sentiment Breakdown</h3>
 
-        <h3 class="text-sm font-semibold text-blue-400 mb-3">
-            Sentiment Distribution
-        </h3>
+            <div style="position: relative; width: 220px; height: 220px; margin-bottom: 24px;">
+                {% if positive == 0 and negative == 0 and neutral == 0 %}
+                    <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); border: 4px dashed var(--border-color); border-radius: 50%;">
+                        No Data
+                    </div>
+                {% else %}
+                    <canvas id="reportChart"></canvas>
+                {% endif %}
+            </div>
 
-        <div style="width:250px; height:250px;">
-            <canvas id="reportChart"></canvas>
+            <div style="display: flex; gap: 16px; justify-content: center; font-size: 0.875rem; width: 100%; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 6px; background: rgba(var(--overlay-rgb), 0.06); padding: 4px 12px; border-radius: 20px;">
+                    <div style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--success);"></div>
+                    <span class="text-primary font-bold">{{ positive }}</span> <span class="text-secondary">Pos</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px; background: rgba(var(--overlay-rgb), 0.06); padding: 4px 12px; border-radius: 20px;">
+                    <div style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--danger);"></div>
+                    <span class="text-primary font-bold">{{ negative }}</span> <span class="text-secondary">Neg</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px; background: rgba(var(--overlay-rgb), 0.06); padding: 4px 12px; border-radius: 20px;">
+                    <div style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--warning);"></div>
+                    <span class="text-primary font-bold">{{ neutral }}</span> <span class="text-secondary">Neu</span>
+                </div>
+            </div>
         </div>
 
-        <!-- STATS -->
-        <div class="mt-4 flex gap-4 text-xs">
-            <span class="text-green-400">● {{ positive }}</span>
-            <span class="text-red-400">● {{ negative }}</span>
-            <span class="text-yellow-400">● {{ neutral }}</span>
+        <!-- Top Issues -->
+        <div class="tilt-card glass p-6">
+            <h3 class="text-danger mb-4" style="font-size: 1rem;">Top Issues (real feedback)</h3>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                {% for f in top_issues %}
+                <div style="padding: 12px; background: rgba(239,68,68,0.05); border-radius: 8px; border: 1px solid rgba(239,68,68,0.15);">
+                    <p class="text-secondary" style="font-size: 0.85rem; line-height: 1.5;">"{{ f.text }}"</p>
+                    <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 6px;">— {{ f.name }}{% if f.service %} &middot; {{ f.service }}{% endif %}</p>
+                </div>
+                {% else %}
+                <p class="text-secondary" style="font-size: 0.85rem;">No negative feedback recorded.</p>
+                {% endfor %}
+            </div>
         </div>
 
+        <!-- Top Positive Feedback -->
+        <div class="tilt-card glass p-6">
+            <h3 class="text-success mb-4" style="font-size: 1rem;">Top Positive Feedback</h3>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                {% for f in top_positive %}
+                <div style="padding: 12px; background: rgba(0,208,132,0.05); border-radius: 8px; border: 1px solid rgba(0,208,132,0.15);">
+                    <p class="text-secondary" style="font-size: 0.85rem; line-height: 1.5;">"{{ f.text }}"</p>
+                    <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 6px;">— {{ f.name }}{% if f.service %} &middot; {{ f.service }}{% endif %}</p>
+                </div>
+                {% else %}
+                <p class="text-secondary" style="font-size: 0.85rem;">No positive feedback recorded yet.</p>
+                {% endfor %}
+            </div>
+        </div>
     </div>
 
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-const ctx = document.getElementById('reportChart');
-
-new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-        labels: ['Positive', 'Negative', 'Neutral'],
-        datasets: [{
-            data: [{{ positive }}, {{ negative }}, {{ neutral }}],
-            backgroundColor: ['#22c55e', '#ef4444', '#eab308'],
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: '70%',
-        plugins: {
-            legend: {
-                labels: { color: 'white', font: { size: 10 } }
-            }
+    // Chart.js is self-hosted + deferred (see base.html) - wait for
+    // DOMContentLoaded so it's guaranteed to be loaded before this runs.
+    document.addEventListener('DOMContentLoaded', function () {
+        const reportChartEl = document.getElementById('reportChart');
+        if (reportChartEl) {
+            new Chart(reportChartEl, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Positive', 'Negative', 'Neutral'],
+                    datasets: [{
+                        data: [{{ positive }}, {{ negative }}, {{ neutral }}],
+                        backgroundColor: ['#00D084', '#ef4444', '#f59e0b'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%',
+                    plugins: { legend: { display: false } }
+                }
+            });
         }
-    }
-});
+    });
 </script>
 
 {% endblock %}
